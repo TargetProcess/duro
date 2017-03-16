@@ -31,7 +31,7 @@ scale_free = nx.DiGraph(
      (0, 7), (1, 8), (0, 8), (1, 10), (2, 10), (0, 11), (0, 12), (0, 13), (4, 14)]
 )
 
-graph = two_trees_and_a_cycle
+graph = two_trees
 nx.nx_pydot.to_pydot(graph).write_png('graph-test.png')
 
 
@@ -54,4 +54,16 @@ def test_find_sources():
 
 def test_find_sources_without_attribute():
     two_trees_and_a_cycle_copy = two_trees_and_a_cycle.copy()
-    two_trees_and_a_cycle_copy[1]['attr'] = 'value'
+    two_trees_and_a_cycle_copy.node[1]['attr'] = 'value'
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    two_trees_and_a_cycle_copy.node[2]['attr'] = 'value'
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    two_trees_and_a_cycle_copy.node[6]['another_attr'] = 'value'
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    two_trees_and_a_cycle_copy.node[6]['attr'] = 'value'
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == []
+
+    simple_tree_copy = simple_tree.copy()
+    assert find_sources_without_attribute(simple_tree_copy, 'attr') == [1]
+    simple_tree_copy.node[1]['attr'] = None
+    assert find_sources_without_attribute(simple_tree_copy, 'attr') == [1]
