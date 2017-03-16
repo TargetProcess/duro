@@ -1,0 +1,10 @@
+.cache
+.idea
+*.log
+config.conf
+*.png
+*.csv
+*.gzip
+__pycache__
+create
+views
