@@ -1,63 +1,63 @@
 import networkx as nx
 from graph_utils import find_roots_without_interval
-from file_utils import list_sql_files, list_sql_files_with_content
+from file_utils import list_view_files
+from errors import NotADAGError, RootsWithoutIntervalError, MaterializationError
+from pprint import pprint
+import re
 
 
-def mock_graph():
+def build_graph(folder: str) -> nx.DiGraph:
     graph = nx.DiGraph()
-    graph.add_node('consolidated', interval='1h')
-    graph.add_node('feedback')
-    graph.add_node('requests')
-    graph.add_edge('consolidated', 'feedback')
-    # graph.add_edge('feedback', 'consolidated')
-    graph.add_edge('feedback', 'requests')
-    graph.add_node('arr')
-    graph.add_node('companies')
-    graph.add_node('account')
-    graph.add_node('first_purchase')
-    graph.add_node('last_purchase')
-    graph.add_node('dates')
-    graph.add_edge('arr', 'companies')
-    graph.add_edge('arr', 'dates')
-    graph.add_edge('companies', 'account')
-    graph.add_edge('companies', 'first_purchase')
-    graph.add_edge('companies', 'last_purchase')
-    # graph.add_edge('last_purchase', 'arr')
-    graph.add_edge('account', 'feedback')
-    # graph.add_node('owners')
-
-
-def build_graph() -> nx.DiGraph:
-    graph = nx.DiGraph()
-    graph.add_nodes_from(list_sql_files_with_content('./create'))
+    pprint(list_view_files(folder))
+    graph.add_nodes_from(list_view_files(folder))
     nodes_list = graph.nodes()
     for node, query in graph.nodes_iter(data=True):
-        # print(query)
         for other_node in nodes_list:
-            if f'{other_node} ' in query.get('contents'):
+            if re.search(r'\b' + re.escape(other_node) + r'\b', query.get('contents')):
                 graph.add_edge(node, other_node)
     return graph
 
 
-def main():
-    graph = build_graph()
-    # print(dict(graph.nodes(data=True)))
-    print('Is DAG:', nx.is_directed_acyclic_graph(graph))
-    for cycle in nx.simple_cycles(graph):
-        print('cycle:', cycle)
+def draw_subgraphs(graph: nx.DiGraph):
+    subgraphs = nx.weakly_connected_component_subgraphs(graph)
+    counter = 1
+    for subgraph in subgraphs:
+        nx.nx_pydot.to_pydot(subgraph).write_png(f'graph{counter}.png')
+        counter += 1
 
-    s = nx.weakly_connected_component_subgraphs(graph)
-    n = 1
-    for i in s:
-        # print(nx.topological_sort(i))
-        nx.nx_pydot.to_pydot(i).write_png(f'graph{n}.png')
-        n += 1
 
-    # print(nx.nodes(graph))
+def create_schedule(graph: nx.DiGraph, yml_file: str):
+    schedule = ''
 
-    print('roots without interval:', find_roots_without_interval(graph))
+    with open(yml_file, 'w') as file:
+        file.write(schedule)
+
+
+def main(sql_folder, yml_file):
+    graph = build_graph(sql_folder)
+    is_dag = nx.is_directed_acyclic_graph(graph)
     nx.nx_pydot.to_pydot(graph).write_png('graph.png')
+
+    if not is_dag:
+        print('Views dependency graph is not a DAG. Cycles detected:')
+        for cycle in nx.simple_cycles(graph):
+            print(cycle)
+        raise NotADAGError
+
+    # draw_subgraphs(graph)
+
+    roots_without_interval = find_roots_without_interval(graph)
+
+    if roots_without_interval:
+        print('Some roots don’t have an interval specified. These roots are:',
+              roots_without_interval)
+        raise RootsWithoutIntervalError
+
+    create_schedule(graph, yml_file)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main('./views', 'schedule.yml')
+    except MaterializationError:
+        print('Couldn‘t build a schedule for this views folder.')
