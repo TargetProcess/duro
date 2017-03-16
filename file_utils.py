@@ -1,28 +1,43 @@
 from os.path import splitext, isfile
 import os
+from typing import List, Tuple, NamedTuple
 
 
-def parse_filename(filename):
+class ViewFile(NamedTuple):
+    filename: str
+    filename_with_path: str
+    table: str
+    interval: str
+    contents: str
+
+
+def parse_filename(filename: str) -> Tuple:
     split = splitext(filename)[0].split()
-    # if split[-1] == split[0]:
-    #     raise ValueError('There’s no schedule, table name or .sql extension in the filename')
-    return split[0] #, split[-1]
+    try:
+        return split[0], split[2]
+    except IndexError:
+        return split[0], None
 
 
-def list_sql_files(path):
-    files = [file for file in os.listdir(path) if isfile(os.path.join(path, file))]
-    parsed_names = [parse_filename(file) for file in files]
-    return parsed_names
+def parse_view(filename: str, path: str) -> ViewFile:
+    table, interval = parse_filename(filename)
+    filename_with_path = os.path.join(path, filename)
+    # noinspection PyArgumentList
+    return ViewFile(filename, filename_with_path, table, interval, read_file(filename_with_path))
 
 
-def list_sql_files_with_content(path: str) -> zip:
-    files = [file for file in os.listdir(path) if isfile(os.path.join(path, file))]
-    parsed_names = [parse_filename(file) for file in files]
-    contents = [{'contents': read_file(path, file)} for file in files]
-    return zip(parsed_names, contents)
+def list_view_files(path: str) -> List[Tuple[str, dict]]:
+    views = [parse_view(file, path) for file in os.listdir(path)
+             if isfile(os.path.join(path, file)) and splitext(file)[1] == '.sql']
+
+    return [(view.table, {'contents': view.contents, 'interval': view.interval})
+            for view in views]
 
 
-def read_file(path: str, file: str) -> str:
-    with open(os.path.join(path, file)) as f:
-        return " ".join(line.strip() for line in f)
+def read_file(filename: str) -> str:
+    with open(filename) as file:
+        return " ".join(line.strip() for line in file)
 
+
+def unzip(list_of_tuples: List) -> Tuple[List, List]:
+    return [item[0] for item in list_of_tuples], [item[1] for item in list_of_tuples]
