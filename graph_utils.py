@@ -14,3 +14,14 @@ def find_sources_without_attribute(graph: nx.DiGraph, attribute: str) -> List[st
     roots = find_sources(graph)
     nodes = dict(graph.nodes(data=True))
     return [root for root in roots if not nodes[root].get(attribute)]
+
+
+def detect_cycles(source_graph, strict):
+    if strict:
+        graph = source_graph
+    else:
+        nodes = dict(source_graph.nodes(data=True))
+        nodes_with_interval = [node for node in nodes if nodes.get('interval')]
+        graph = source_graph.copy().subgraph(nodes_with_interval)
+
+    return nx.is_directed_acyclic_graph(graph), nx.simple_cycles(graph)
