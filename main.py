@@ -61,6 +61,6 @@ def main(sql_folder, yml_file, strict=False):
 
 if __name__ == '__main__':
     try:
-        main('./create', 'schedule.yml', strict=False)
+        main('./views', 'schedule.yml', strict=False)
     except MaterializationError:
         print('Couldn‘t build a schedule for this views folder.')
