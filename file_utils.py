@@ -25,15 +25,15 @@ def parse_filename(filename: str) -> Tuple:
 
 def parse_view(filename: str, path: str) -> ViewFile:
     table, interval = parse_filename(filename.replace(f'{path}/', '', 1))
-    # TODO: load_test()
+
     # noinspection PyArgumentList
     return ViewFile(filename, table, interval, read_file(filename))
 
 
 def list_view_files(path: str) -> List[Tuple[str, dict]]:
-    # files =
-    views = [parse_view(file, path) for file in glob.glob(path + '/**/*.sql', recursive=True)]
-             # if isfile(os.path.join(path, file)) and splitext(file)[1] == '.sql']
+    views = [parse_view(file, path)
+             for file in glob.glob(path + '/**/*.sql', recursive=True)
+             if not file.endswith('_test.sql')]
 
     return [(view.table, {'contents': view.contents, 'interval': view.interval})
             for view in views]
