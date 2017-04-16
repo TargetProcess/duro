@@ -1,6 +1,6 @@
 import networkx as nx
 
-from graph_utils import find_sources, find_sources_without_attribute
+from graph_utils import find_sources, find_sources_without_attribute, copy_graph_without_attributes
 
 no_sources = nx.DiGraph([[1, 2], [3, 4], [3, 1], [4, 2], [2, 3]], name='no sources')
 
@@ -67,3 +67,24 @@ def test_find_sources_without_attribute():
     assert find_sources_without_attribute(simple_tree_copy, 'attr') == [1]
     simple_tree_copy.node[1]['attr'] = None
     assert find_sources_without_attribute(simple_tree_copy, 'attr') == [1]
+
+
+def test_copy_graph_without_attributes():
+    graph = nx.DiGraph()
+    graph.add_nodes_from([(1, {'a': 42, 'b': 44}), (2, {'a': 43}), (3, ), (4, )])
+
+    no_attributes = copy_graph_without_attributes(graph, ['a', 'b', 'c']).nodes(data=True)
+    for node in no_attributes:
+        assert node[1].get('a') is None
+        assert node[1].get('b') is None
+        assert node[1].get('c') is None
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from([1, 2, 3, 4])
+    nx.set_node_attributes(graph, 'a', {1: 42, 2: 43})
+    nx.set_node_attributes(graph, 'b', {1: 44})
+
+    no_a_attribute = copy_graph_without_attributes(graph, ['a']).nodes(data=True)
+    for node in no_attributes:
+        assert node[1].get('a') is None
+    assert no_a_attribute[0][1].get('b') == 44
