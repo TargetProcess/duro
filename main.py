@@ -45,15 +45,18 @@ def create_schedule(graph: nx.DiGraph, yml_file: str):
 def save_to_db(graph: nx.DiGraph, db_path: str):
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
-    # TODO: migrate data, do not drop table
     cursor.execute('''DROP TABLE IF EXISTS tables''')
-    cursor.execute('''CREATE TABLE tables
-                        (table_name text, query text, last_created integer);''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS tables
+                        (table_name text, query text, interval integer, last_created integer);''')
 
     nodes = dict(graph.nodes(data=True))
-    tables_and_queries = [(k, v['contents'], None) for k, v in nodes.items()]
+    tables_and_queries = [(k, v['contents'], v['interval']) for k, v in nodes.items()]
+    for table, query, interval in tables_and_queries:
+        cursor.execute('''UPDATE tables SET query = ?, interval = ?
+                        WHERE table_name = ? ''', (query, interval, table))
+        if cursor.rowcount == 0:
+            cursor.execute('''INSERT INTO tables VALUES (?, ?, ?, ?)''', (table, query, interval, None))
 
-    cursor.executemany('''INSERT INTO tables VALUES (?, ?, ?)''', tables_and_queries)
     connection.commit()
     connection.close()
 
