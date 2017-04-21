@@ -1,56 +1,80 @@
+import configparser
 import os
 import sqlite3
-from datetime import datetime as dt, timedelta
-from typing import List, Tuple, Dict
+import sys
+from datetime import datetime as dt
+from typing import List, Dict, NamedTuple
 
 import networkx as nx
 import psycopg2
 
 from credentials import redshift_credentials
+from errors import (TableNotFoundError, MaterializationError,
+                    TableCreationError)
 from file_utils import read_file, read_config
-from errors import TestsFailedError
 
 
-def get_children(root: str, graph_file: str) -> List:
-    graph = nx.nx_pydot.read_dot(graph_file)
-    print(root, ':', graph[root].keys())
-    return graph[root].keys()
+class Table(NamedTuple):
+    name: str
+    query: str
+    interval: int
+    last_created: int
 
 
-def create_table(table: str, db_path: str, views_path: str):
-    query, interval, last_created = load_info(table, db_path)
-    if not should_be_created(interval, last_created):
+class GlobalConfig(NamedTuple):
+    db_path: str
+    views_path: str
+    graph: nx.DiGraph
+
+
+def get_children(root: str, graph: nx.DiGraph) -> List:
+    try:
+        print(f'Children of {root}: {list(graph[root].keys())}')
+        return list(graph[root].keys())
+    except KeyError:
+        raise TableNotFoundError(
+            'There’s no table with this name in configuration db.')
+
+
+def create_table(table: Table, db_path: str, views_path: str):
+    if not should_be_created(table.interval, table.last_created):
+        print(f'{table.name} is fresh enough')
         return
-    config = load_config(table, views_path)
-
+    config = load_config(table.name, views_path)
+    print(f'Creating {table.name} with {table.interval}')
     connection = create_connection()
-    creation_timestamp = create_temp_table(table, query, config, connection)
+    creation_timestamp = create_temp_table(table.name, table.query, config,
+                                           connection)
 
-    tests_queries = load_tests(table, views_path)
+    tests_queries = load_tests(table.name, views_path)
     test_results = run_tests(tests_queries, connection)
     if not test_results:
-        drop_temp_table(table, connection)
+        drop_temp_table(table.name, connection)
         return
 
-    replace_old_table(table, connection)
-    update_last_created(table, creation_timestamp, db_path)
+    replace_old_table(table.name, connection)
+    drop_old_table(table.name, connection)
+    connection.close()
+
+    update_last_created(table.name, creation_timestamp, db_path)
     if 'tableau_extracts' in config:
-        create_tableau_extract(table, config['tableau_extracts'])
+        create_tableau_extract(table.name, config['tableau_extracts'])
     if 'sync_db' in config and 'sync_table' in config:
-        sync_to_db(table, config)
+        sync_to_db(table.name, config)
 
 
-def load_info(table: str, db: str) -> Tuple[str, int, int]:
+def load_info(table: str, db: str) -> Table:
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute('''SELECT query, interval, last_created 
                         FROM tables
                         WHERE table_name = ? ''', (table,))
-        return cursor.fetchone()
+        # noinspection PyArgumentList
+        return Table(table, *cursor.fetchone())
 
 
 def should_be_created(interval: int, last_created: int) -> bool:
-    if last_created is None:
+    if last_created is None or interval is None:
         return True
 
     delta = dt.now() - dt.fromtimestamp(last_created)
@@ -58,29 +82,34 @@ def should_be_created(interval: int, last_created: int) -> bool:
 
 
 def create_connection():
-    connection = psycopg2.connect(redshift_credentials())
+    connection = psycopg2.connect(**redshift_credentials())
     connection.autocommit = True
     return connection
 
 
 def create_temp_table(table: str, query: str, config: Dict, connection) -> int:
     print(f'Creating temp table for {table}')
-    create_query = add_dist_sort_keys(table, query, config)
+
+    create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)
     full_query = f'''DROP TABLE IF EXISTS {table}_temp;
                 {create_query}
                 '''
+
     if config.get('users'):
         full_query += f'GRANT SELECT ON {table}_temp TO {config["users"]}'
 
-    with connection.cursor() as cursor:
-        cursor.execute(full_query)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(full_query)
+    except psycopg2.ProgrammingError as e:
+        raise TableCreationError(str(e))
     return int(dt.now().timestamp())
 
 
 def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
-    distkey = f'distkey({config["distkey"]})' if config.get('distkey') else ''
-    sortkey = f'distkey({config["sortkey"]})' if config.get('sortkey') else ''
-    diststyle = f'distkey({config["diststyle"]})' if config.get(
+    distkey = f'distkey("{config["distkey"]}")' if config.get('distkey') else ''
+    sortkey = f'sortkey("{config["sortkey"]}")' if config.get('sortkey') else ''
+    diststyle = f'diststyle {config["diststyle"]}' if config.get(
         'diststyle') else ''
     return f'''CREATE TABLE {table}_temp
             {distkey} {sortkey} {diststyle}
@@ -88,14 +117,16 @@ def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
 
 
 def load_tests(table: str, path: str) -> str:
+    print(f'Loading tests for {table}')
     folder, file = table.split('.')
     tests_file = os.path.join(path, folder, f'{file}_test.sql')
     if os.path.isfile(tests_file):
-        return read_file(tests_file)
+        return read_file(tests_file).replace(f'{table}', f'{table}_temp')
     else:
         tests_file = os.path.join(path, f'{table}_test.sql')
         if os.path.isfile(tests_file):
-            return read_file(tests_file)
+            return read_file(tests_file).replace(f'{table}', f'{table}_temp')
+    print(f'No tests for {table}')
     return ''
 
 
@@ -105,7 +136,7 @@ def run_tests(tests_queries: str, connection) -> bool:
 
     print(f'Running tests')
     with connection.cursor() as cursor:
-        queries = (q for q in tests_queries.split() if len(q) > 0)
+        queries = (q for q in tests_queries.split(';') if len(q) > 0)
         results = []
         for query in queries:
             cursor.execute(query)
@@ -115,15 +146,24 @@ def run_tests(tests_queries: str, connection) -> bool:
         passed = all((result[1] for result in results))
         if not passed:
             failed_columns = [result[0] for result in results if not result[1]]
-            raise(TestsFailedError(f'Failed tests: {failed_columns}'))
+            print(f'Failed tests: {failed_columns}')
 
         return passed
 
 
 def drop_temp_table(table: str, connection):
     print(f'Dropping temp table for {table}')
+    drop_table(f'{table}_temp', connection)
+
+
+def drop_old_table(table: str, connection):
+    print(f'Dropping old table for {table}')
+    drop_table(f'{table}_old', connection)
+
+
+def drop_table(table: str, connection):
     with connection.cursor() as cursor:
-        query_drop = f'DROP TABLE IF EXISTS {self.table}_old;'
+        query_drop = f'DROP TABLE IF EXISTS {table};'
         cursor.execute(query_drop)
 
 
@@ -139,9 +179,15 @@ def load_config(full_table_name: str, path: str) -> Dict:
     table_config_inside = read_config(
         os.path.join(path, schema, f'{table}.conf'))
 
-    return {**global_config,
-            **schema_config_outside, **schema_config_inside,
-            **table_config_outside, **table_config_inside}
+    merged = {**global_config,
+              **schema_config_outside, **schema_config_inside,
+              **table_config_outside, **table_config_inside}
+
+    for key, value in merged.items():
+        if value in ('null', 'None', ''):
+            merged[key] = None
+
+    return merged
 
 
 def replace_old_table(table: str, connection):
@@ -186,17 +232,41 @@ def sync_to_db(table: str, config: Dict):
     pass
 
 
-def main(root_table: str, db_path: str, views_path: str):
-    db = os.path.join(db_path, 'duro.db')
-    graph_file = os.path.join(db_path, 'dependencies.dot')
-    children = get_children(root_table, graph_file)
-    for child in children:
-        main(child, db_path, views_path)
-    create_table(root_table, db, views_path)
+def create_tree(root: str, global_config: GlobalConfig, interval: int = None):
+    children = get_children(root, global_config.graph)
+    table = load_info(root, global_config.db_path)
+
+    if table.interval is None and interval is not None:
+        print(f'Updating interval for {root}')
+        table = Table(table.name, table.query, interval, table.last_created)
+
+    # for child in children:
+    #     create_tree(child, global_config, table.interval)
+    try:
+        create_table(table, global_config.db_path, global_config.views_path)
+    except MaterializationError as e:
+        print(e)
+
+
+def load_global_config() -> GlobalConfig:
+    try:
+        config = configparser.ConfigParser()
+        config.read('config.conf')
+        db_path = config['main'].get('db', './duro.db')
+        views_path = config['main'].get('views', './views')
+        graph_file_path = config['main'].get('graph', 'dependencies.dot')
+        graph = nx.nx_pydot.read_dot(graph_file_path)
+        return GlobalConfig(db_path, views_path, graph)
+    except configparser.NoSectionError:
+        print('No ’main’ section in config.conf')
+        sys.exit(1)
+
+
+def main(root_table: str):
+    create_tree(root_table, load_global_config())
 
 
 if __name__ == '__main__':
-    db_path = '.'
-    views_path = './views'
-    # main('custom.companies', path)
-    main('tauspy.most_active_users', db_path, views_path)
+    main('satisfaction.widget')
+    # custom.title_tags
+    # feedback.contacts
