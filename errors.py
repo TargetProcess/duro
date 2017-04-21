@@ -19,4 +19,12 @@ class GitError(MaterializationError):
 
 
 class TestsFailedError(MaterializationError):
-    '''When tests failed'''
+    """When tests failed"""
+
+
+class TableNotFoundError(MaterializationError):
+    """No table with this name found in config db"""
+
+
+class TableCreationError(MaterializationError):
+    """Couldn’t create a table in Redshift"""
