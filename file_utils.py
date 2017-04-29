@@ -4,11 +4,11 @@ from typing import List, Tuple, NamedTuple, Dict
 from functools import lru_cache
 import configparser
 from itertools import chain
+import os
 
 
 class ViewFile(NamedTuple):
     filename: str
-    # filename_with_path: str
     table: str
     interval: str
     contents: str
@@ -77,3 +77,16 @@ def convert_interval_to_integer(interval: str) -> int:
         return value * units[unit]
     except:
         raise ValueError('Invalid interval')
+
+
+def get_processor(table: str, path: str) -> str:
+    print(f'Loading tests for {table}')
+    folder, file = table.split('.')
+    processor_file = os.path.join(path, folder, f'{file}.py')
+    if os.path.isfile(processor_file):
+        return os.path.splitext(processor_file)[0]
+    else:
+        processor_file = os.path.join(path, f'{table}.py')
+        if os.path.isfile(processor_file):
+            return os.path.splitext(processor_file)[0]
+    return ''
