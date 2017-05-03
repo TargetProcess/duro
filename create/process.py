@@ -1,22 +1,26 @@
 import csv
 import importlib.machinery
-from typing import List, Dict
 from datetime import datetime as dt
+from typing import List, Dict
 
 import tinys3
 
-from credentials import s3_credentials
-from utils import Table, DistSortKeys
 from create.config import load_dist_sort_keys
+from create.timestamps import Timestamps
+from credentials import s3_credentials
 from file_utils import load_create_query
+from utils import Table
 
 
-def process_and_upload_data(table: Table, processor: str, connection, config: Dict) -> int:
+def process_and_upload_data(table: Table, processor: str, connection,
+                            config: Dict, ts: Timestamps) -> int:
     data = select_data(table.query, connection)
+    ts.log('select')
     processed_data = process_data(data, processor)
+    ts.log('process')
     return upload_to_temp_table(processed_data,
-                                table.name, config,
-                                connection)
+                                  table.name, config,
+                                  connection, ts)
 
 
 def select_data(query: str, connection) -> List[Dict]:
@@ -36,13 +40,22 @@ def process_data(data: List[Dict], processor: str) -> List[Dict]:
 
 
 def upload_to_temp_table(data: List[Dict], table: str, config: Dict,
-                         connection) -> int:
+                         connection, ts: Timestamps) -> int:
     filename = f'{s3_credentials()["folder"]}/{table}-{dt.now().strftime("%Y-%m-%d-%H-%M")}.csv'
     save_to_csv(data, filename)
+    ts.log('csv')
+
     upload_to_s3(filename)
+    ts.log('s3')
+
     drop_and_create_query = build_drop_and_create_query(table, config)
-    timestamp = copy_to_redshift(filename, table, connection, drop_and_create_query)
+    timestamp = copy_to_redshift(filename, table, connection,
+                                 drop_and_create_query)
+    ts.log('insert')
+
     remove_csv_files(filename)
+    ts.log('clean_csv')
+
     return timestamp
 
 
@@ -69,7 +82,8 @@ def build_drop_and_create_query(table: Table, config: Dict):
     return f''''''
 
 
-def copy_to_redshift(filename: str, table: str, connection, drop_and_create_query: str) -> int:
+def copy_to_redshift(filename: str, table: str, connection,
+                     drop_and_create_query: str) -> int:
     print(f'Copying {table} to Redshift')
     with connection.cursor() as cursor:
         cursor.execute(f'''{drop_and_create_query};

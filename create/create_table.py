@@ -9,16 +9,18 @@ import psycopg2
 from create.config import load_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
-from create.sqlite import load_info, update_last_created
+from create.sqlite import load_info, update_last_created, log_timestamps
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
                              create_temp_table)
+from create.timestamps import Timestamps
 
 from credentials import redshift_credentials
 from errors import TableNotFoundError, MaterializationError
 from file_utils import get_processor
 from utils import GlobalConfig, Table
 
-tables_to_create_count = 0
+
+tables_to_create_count = 1
 
 
 def get_children(root: str, graph: nx.DiGraph) -> List:
@@ -42,27 +44,37 @@ def create_table(table: Table, db_path: str, views_path: str):
         print(f'Tables remaining: {tables_to_create_count}')
         return
 
+    ts = Timestamps()
+    ts.log('start')
     config = load_config(table.name, views_path)
-    print(f'Creating {table.name} with {table.interval}')
+    print(f'Creating {table.name} with interval {table.interval}')
+
     connection = create_connection()
+    ts.log('connect')
+
     processor = get_processor(table.name, views_path)
     if processor:
-        creation_timestamp = process_and_upload_data(table, processor, connection, config)
+        creation_timestamp = process_and_upload_data(table, processor, connection, config, ts)
     else:
         creation_timestamp = create_temp_table(table.name, table.query, config,
                                                connection)
+        ts.log('create_temp')
 
     tests_queries = load_tests(table.name, views_path)
     test_results = run_tests(tests_queries, connection)
+    ts.log('tests')
     if not test_results:
         drop_temp_table(table.name, connection)
         return
 
     replace_old_table(table.name, connection)
+    ts.log('replace_old')
     drop_old_table(table.name, connection)
+    ts.log('drop_old')
     connection.close()
 
     update_last_created(table.name, creation_timestamp, db_path)
+    log_timestamps(table.name, db_path, ts)
     tables_to_create_count -= 1
     print(f'Tables remaining: {tables_to_create_count}')
 
@@ -118,6 +130,6 @@ def main(root_table: str):
 
 
 if __name__ == '__main__':
-    main('satisfaction.widget')
-    # custom.title_tags
+    # main('tauspy.most_active_users')
+    main('custom.title_tags')
     # feedback.contacts
