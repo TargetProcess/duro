@@ -1,0 +1,15 @@
+<!doctype html>
+<title>Materialize</title>
+<!--<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">-->
+<div class=page>
+    <h1>Tables!</h1>
+    <ul class=entries>
+
+        {% for table in tables %}
+        <p>{{ table.table_name }} {{ table.interval|format_interval }} — {{
+            table.last_created|format_int_as_date }}</p>
+        {% else %}
+        <em>Tables?</em>
+        {% endfor %}
+    </ul>
+</div>

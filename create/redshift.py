@@ -1,4 +1,4 @@
-from datetime import datetime as dt
+import arrow
 from typing import Dict
 
 import psycopg2
@@ -23,7 +23,8 @@ def create_temp_table(table: str, query: str, config: Dict, connection) -> int:
             cursor.execute(full_query)
     except psycopg2.ProgrammingError as e:
         raise TableCreationError(str(e))
-    return int(dt.now().timestamp())
+    print(arrow.now())
+    return arrow.now().timestamp
 
 
 def drop_temp_table(table: str, connection):

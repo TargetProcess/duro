@@ -1,0 +1,74 @@
+<!doctype html>
+<head>
+<title>Materialize</title>
+    <script src="//cdn.jsdelivr.net/d3js/3.5.10/d3.min.js"></script>
+<!--<script src="{{ url_for('static', filename='d3.min.js') }}" type="text/javascript"></script>-->
+<script src="{{ url_for('static', filename='moment.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='underscore-min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='tauCharts.min.js') }}" type="text/javascript"></script>
+<!--<script src="{{ url_for('static', filename='tauCharts.js') }}" type="text/javascript"></script>-->
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='tauCharts.min.css') }}">
+
+    </head>
+<body>
+<div id='chart' style="
+  width: 800px;
+  height: 400px;
+  margin: 0;
+  padding: 0;
+  //float: left;
+">
+</div>
+
+<div>
+    <h4>{{ table }}</h4>
+    {% for log in logs %}
+    <div>
+        {% for event in log %}
+        <p>{{ event }}</p>
+        {% endfor %}
+        <hr>
+        </div>
+        {% else %}
+        <em>Runs?</em>
+        {% endfor %}
+</div>
+
+
+<script>
+var datasource = {{ graph_data|tojson }}
+
+//tauCharts.api.tickFormat.add("dayHour", function(x) {
+//    moment(x).format('MMM Do hh:mm');
+//});
+
+var chart = new tauCharts.Chart({
+    data: datasource,
+    type: 'line',
+    x: 'date',
+    y: 'duration',
+    dimensions: {
+        date: {
+        type: 'measure',
+        scale: 'time'
+        },
+        duration: { type: 'measure'}
+    },
+    guide: {
+        x: {label: 'Creation start'},
+        y: {label: 'Creation duration'},
+        interpolate: 'smooth-keep-extremum',
+        showAnchors: 'always'
+
+    },
+    plugins: [
+        tauCharts.api.plugins.get('tooltip')(),
+        tauCharts.api.plugins.get('legend')()
+
+    ]
+});
+chart.renderTo('#chart');
+
+
+</script>
+</body>

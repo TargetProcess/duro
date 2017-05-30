@@ -1,0 +1,14 @@
+<!doctype html>
+<title>Materialize</title>
+<!--<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">-->
+<div class=page>
+  <h1>Tables!</h1>
+  <ul class=entries>
+
+  {% for job in jobs %}
+      <p>{{ job.table }} started at {{ job.start|format_int_as_date }} </p>
+  {% else %}
+      <em>Jobs?</em>
+  {% endfor %}
+  </ul>
+</div>

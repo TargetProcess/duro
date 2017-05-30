@@ -1,14 +1,26 @@
-from datetime import datetime as dt
+import arrow
+
+events = {
+    'start': 'Started',
+    'connect': 'Connected to Redshift',
+    'select': 'Selected data from Redshift',
+    'create_temp': 'Created temporary table',
+    'process': 'Processed selected data',
+    'csv': 'Exported processed data to CSV',
+    's3': 'Uploaded processed data to S3',
+    'insert': 'Uploaded processed data to Redshift',
+    'clean_csv': 'Removed CSV files',
+    'tests': 'Run tests',
+    'replace_old': 'Replaced old table',
+    'drop_old': 'Dropped old table'
+}
 
 
 class Timestamps:
-    __slots__ = ('start', 'connect', 'select',
-                 'create_temp', 'process', 'csv',
-                 's3', 'insert', 'clean_csv',
-                 'tests', 'replace_old', 'drop_old')
+    __slots__ = list(events.keys())
 
     def log(self, event: str):
-        setattr(self, event, int(dt.now().timestamp()))
+        setattr(self, event, arrow.now().timestamp)
 
     @property
     def events(self):

@@ -36,10 +36,21 @@ def parse_view(filename: str, path: str) -> ViewFile:
 def list_view_files(path: str) -> List[Tuple[str, dict]]:
     views = [parse_view(file, path)
              for file in glob.glob(path + '/**/*.sql', recursive=True)
-             if not file.endswith('_test.sql')]
-
+             if not file.endswith('_test.sql') and not is_processor_ddl(file)]
     return [(view.table, {'contents': view.contents, 'interval': convert_interval_to_integer(view.interval)})
             for view in views]
+
+
+def is_processor_ddl(filename: str) -> bool:
+    if 'create_' not in filename:
+        return False
+    path = os.path.dirname(filename)
+    file = os.path.basename(filename)
+    table_name = file.replace('create_', '')
+    processor_file = os.path.join(path, f'{splitext(table_name)[0].split()[0]}.py')
+    if os.path.isfile(processor_file) and file.startswith('create_'):
+        return True
+    return False
 
 
 @lru_cache()

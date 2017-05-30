@@ -39,15 +39,7 @@ def draw_subgraphs(graph: nx.DiGraph):
         counter += 1
 
 
-def create_schedule(graph: nx.DiGraph):
-    nodes = dict(graph.nodes(data=True))
-    nodes_with_interval = ((k, v['interval']) for k, v in nodes.items() if
-                           v.get('interval'))
-    # for (table, interval) in nodes_with_interval:
-        # build_single_schedule(table, interval)
-
-
-def main(sql_folder, strict=False, db_path='../duro.db', use_git=False):
+def main(sql_folder, strict=False, db_path='./duro.db', use_git=False):
     latest_commit = None
     if use_git:
         commits = get_all_commits(sql_folder)
@@ -77,12 +69,11 @@ def main(sql_folder, strict=False, db_path='../duro.db', use_git=False):
               roots_without_interval)
         raise RootsWithoutIntervalError
 
-    # create_schedule(graph)
     save_to_db(graph, db_path, latest_commit)
 
 
 if __name__ == '__main__':
     try:
-        main('../views', strict=False, use_git=False)
+        main('./views', strict=False, use_git=False)
     except MaterializationError:
         print('Couldn‘t build a schedule for this views folder.')

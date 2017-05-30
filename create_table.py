@@ -1,6 +1,6 @@
 import configparser
 import sys
-from datetime import datetime as dt
+import arrow
 from typing import List
 
 import networkx as nx
@@ -9,16 +9,14 @@ import psycopg2
 from create.config import load_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
-from create.sqlite import load_info, update_last_created, log_timestamps
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
                              create_temp_table)
+from create.sqlite import load_info, update_last_created, log_timestamps
 from create.timestamps import Timestamps
-
 from credentials import redshift_credentials
 from errors import TableNotFoundError, MaterializationError
 from file_utils import get_processor
 from utils import GlobalConfig, Table
-
 
 tables_to_create_count = 1
 
@@ -54,7 +52,9 @@ def create_table(table: Table, db_path: str, views_path: str):
 
     processor = get_processor(table.name, views_path)
     if processor:
-        creation_timestamp = process_and_upload_data(table, processor, connection, config, ts)
+        creation_timestamp = process_and_upload_data(table, processor,
+                                                     connection, config, ts,
+                                                     views_path)
     else:
         creation_timestamp = create_temp_table(table.name, table.query, config,
                                                connection)
@@ -80,10 +80,11 @@ def create_table(table: Table, db_path: str, views_path: str):
 
 
 def should_be_created(interval: int, last_created: int) -> bool:
+    return True
     if last_created is None or interval is None:
         return True
 
-    delta = dt.now() - dt.fromtimestamp(last_created)
+    delta = arrow.now() - arrow.get(last_created)
     return (delta.total_seconds() / 60) > interval
 
 
@@ -130,6 +131,6 @@ def main(root_table: str):
 
 
 if __name__ == '__main__':
-    # main('tauspy.most_active_users')
-    main('custom.title_tags')
+    main('tauspy.most_active_users')
+    # main('licenses.changes')
     # feedback.contacts
