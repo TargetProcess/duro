@@ -22,17 +22,19 @@ def save_to_db(graph: nx.DiGraph, db_path: str, commit: str):
 def save_tables(tables_and_queries: List[Tuple], cursor):
     try:
         for table, query, interval in tables_and_queries:
-            cursor.execute('''UPDATE tables SET query = ?, interval = ?
+            cursor.execute('''UPDATE tables 
+                            SET query = ?, interval = ?, times_run = 0, mean = 0
                             WHERE table_name = ? ''', (query, interval, table))
             if cursor.rowcount == 0:
                 cursor.execute('''INSERT INTO tables 
-                                VALUES (?, ?, ?, ?)''',
-                               (table, query, interval, None))
+                                VALUES (?, ?, ?, ?, ?, ?)''',
+                               (table, query, interval, None, 0, 0))
     except sqlite3.OperationalError as e:
         if str(e).startswith('no such table'):
             cursor.execute('''CREATE TABLE IF NOT EXISTS tables
                                 (table_name text, query text, 
-                                interval integer, last_created integer);''')
+                                interval integer, last_created integer,
+                                mean real, times_run integer);''')
             save_tables(tables_and_queries, cursor)
         else:
             raise

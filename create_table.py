@@ -73,7 +73,7 @@ def create_table(table: Table, db_path: str, views_path: str):
     ts.log('drop_old')
     connection.close()
 
-    update_last_created(table.name, creation_timestamp, db_path)
+    update_last_created(db_path, table.name, creation_timestamp, ts.duration)
     log_timestamps(table.name, db_path, ts)
     tables_to_create_count -= 1
     print(f'Tables remaining: {tables_to_create_count}')
@@ -132,5 +132,8 @@ def main(root_table: str):
 
 if __name__ == '__main__':
     main('tauspy.most_active_users')
+    # main('tauspy.daily_active_users')
+    # main('tauspy.visits_flattened')
+    # main('tauspy.vizydrop_description')
     # main('licenses.changes')
     # feedback.contacts

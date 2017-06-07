@@ -14,12 +14,19 @@ def load_info(table: str, db: str) -> Table:
         return Table(table, *cursor.fetchone())
 
 
-def update_last_created(table: str, timestamp: int, db: str):
+def update_last_created(db: str, table: str, timestamp: int, duration: int):
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute('''UPDATE tables 
-                        SET last_created = ?
-                        WHERE table_name = ? ''', (timestamp, table))
+                        SET last_created = ?,
+                            mean = 
+                                (CASE WHEN times_run IS NOT NULL AND mean IS NOT NULL 
+                                    THEN (mean * times_run + ?) / (times_run + 1)
+                                ELSE ? END),
+                            times_run = 
+                                (CASE WHEN times_run IS NOT NULL THEN times_run + 1
+                                ELSE 1 END)
+                        WHERE table_name = ? ''', (timestamp, duration, duration, table))
 
 
 def log_timestamps(table: str, db: str, timestamps: Timestamps):

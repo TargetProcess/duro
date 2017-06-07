@@ -1,15 +1,53 @@
 <!doctype html>
 <title>Materialize</title>
-<!--<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">-->
-<div class=page>
-    <h1>Tables!</h1>
-    <ul class=entries>
 
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='bootstrap.min.css') }}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.15/css/dataTables.bootstrap4.min.css" rel="stylesheet"/>
+<div class="container">
+    <h1>Tables!</h1>
+    <table class="table table-hover table-sm" id="tables">
+        <thead>
+        <tr>
+            <th>Table</th>
+            <th>Interval</th>
+            <th>Last created</th>
+            <th>Average time</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
         {% for table in tables %}
-        <p>{{ table.table_name }} {{ table.interval|format_interval }} — {{
-            table.last_created|format_int_as_date }}</p>
-        {% else %}
-        <em>Tables?</em>
+        <tr>
+            <td class="align-middle"><a href="/tables/{{ table.table_name }}">{{ table.table_name }}</a></td>
+            <td class="align-middle">{{ table.interval|format_interval }}</td>
+            <td class="align-middle">{{ table.last_created|format_int_as_date }}</td>
+            <td class="align-middle">{{ table.mean|format_avg_time }}</td>
+            <td><button class='btn'>Update</button></td>
+            <td><button class='btn'>Forced update</button></td>
+        </tr>
         {% endfor %}
-    </ul>
+        </tbody>
+    </table>
 </div>
+<!--<script src="{{ url_for('static', filename='jquery-3.1.1.slim.min.js') }}" type="text/javascript"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='tether.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='bootstrap.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='moment.min.js') }}" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.15/js/jquery.dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.15/js/dataTables.bootstrap4.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#tables').DataTable({
+        "paging": false,
+        "info": false,
+        "order": [[ 2, "desc" ]]});
+    $('#tables td:nth-child(3)').each(function(index, el) {
+        $node = $(el);
+        if ($node.text()) {
+            $node.text(moment($node.text()).fromNow())
+        }
+    });
+});
+</script>
