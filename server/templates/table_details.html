@@ -16,7 +16,6 @@
   height: 400px;
   margin: 0;
   padding: 0;
-  //float: left;
 ">
 </div>
 
@@ -37,10 +36,6 @@
 
 <script>
 var datasource = {{ graph_data|tojson }}
-
-//tauCharts.api.tickFormat.add("dayHour", function(x) {
-//    moment(x).format('MMM Do hh:mm');
-//});
 
 var chart = new tauCharts.Chart({
     data: datasource,
