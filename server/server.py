@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 import arrow
 from flask import Flask, g, render_template, request, jsonify
@@ -7,7 +7,9 @@ from flask import Flask, g, render_template, request, jsonify
 from server.formatters import (format_average_time, format_as_human_date,
                                format_as_date, format_interval,
                                print_log, skip_none)
-from server.sqlite import get_all_tables, get_jobs, get_table_details
+from server.sqlite import (get_all_tables, get_jobs, get_table_details, set_table_for_update)
+
+from create.sqlite import is_running
 
 DATABASE = './duro.db'
 
@@ -27,14 +29,14 @@ app.config.update(
 )
 
 
-def get_db(use_rowfactory=True):
+def get_db(use_rowfactory: bool = True):
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = connect_db(use_rowfactory)
     return db
 
 
-def connect_db(use_rowfactory=True):
+def connect_db(use_rowfactory: bool = True):
     rv = sqlite3.connect(DATABASE)
     if use_rowfactory:
         rv.row_factory = sqlite3.Row
@@ -56,7 +58,7 @@ def show_list():
 @app.route('/')
 @app.route('/<from_date>/')
 @app.route('/<from_date>/<to_date>')
-def show_current(from_date=None, to_date=None):
+def show_current(from_date: str = None, to_date: str = None):
     if from_date:
         floor = arrow.get(from_date).format()
     else:
@@ -99,6 +101,17 @@ def prepare_table_details(details: List) -> Tuple[List, List]:
             [{'date': arrow.get(d['start']).format(),
               'duration': d['finish'] - d['start']}
              for d in details])
+
+
+@app.route('/update', methods=['POST'])
+def register_update_request():
+    table = request.form['table']
+    force_tree_update = request.form.get('tree', 0)
+    if is_running(table, DATABASE):
+        return jsonify({'message': 'Already running'})
+
+    set_table_for_update(get_db(), table, force_tree_update)
+    return jsonify({'message': f'Scheduled {table} for update'})
 
 
 def main():

@@ -1,4 +1,3 @@
-
 def get_all_tables(db):
     return db.execute('''
             SELECT table_name, interval, last_created, mean
@@ -6,19 +5,19 @@ def get_all_tables(db):
             ORDER BY last_created DESC''').fetchall()
 
 
-def get_jobs(floor, ceiling, db):
+def get_jobs(floor: int, ceiling: int, db):
     return db.execute('''
                     SELECT "table", 
                         "start",
-                        COALESCE(drop_old, "insert") as "finish"
+                        COALESCE(drop_old, "insert") AS "finish"
                     FROM timestamps
-                    WHERE "start" BETWEEN ? and ?
+                    WHERE "start" BETWEEN ? AND ?
                     
                     UNION ALL
                     
-                    SELECT table_name as "table",
-                        started as "start",
-                        NULL as "finish"
+                    SELECT table_name AS "table",
+                        started AS "start",
+                        NULL AS "finish"
                     FROM tables
                     WHERE started IS NOT NULL
                     
@@ -36,3 +35,10 @@ def get_table_details(db, table: str):
                 WHERE t.table_name = ?
                 ORDER BY ts.drop_old DESC''',
                       (table,)).fetchall()
+
+
+def set_table_for_update(db, table: str, force_tree: int):
+    db.execute('''UPDATE tables
+                SET force = 1, force_tree = ?
+                WHERE table_name = ? ''', (force_tree, table))
+    db.commit()

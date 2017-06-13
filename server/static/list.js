@@ -84,15 +84,19 @@ $(document).ready(function() {
         var request = {
             type: 'POST',
             url: '/update',
-            data: {
-                table: id.substring(12),
-                tree: false
-            },
             success: displayUpdateSuccess,
             error: displayUpdateFailure
         };
         if (id.substring(0, 11) === 'update-tree') {
-            request.data.tree = true;
+            request.data = {
+                table: id.substring(12),
+                tree: 1
+            };
+        } else {
+            request.data = {
+                table: id.substring(7),
+                tree: 0
+            };
         }
         $.ajax(request);
     });
