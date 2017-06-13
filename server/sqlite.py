@@ -7,23 +7,22 @@ def get_all_tables(db):
 
 
 def get_jobs(floor, ceiling, db):
-    print(floor, ceiling)
     return db.execute('''
-                    (SELECT "table", 
-                        "start" 
+                    SELECT "table", 
+                        "start",
                         COALESCE(drop_old, "insert") as "finish"
                     FROM timestamps
-                    WHERE "start" BETWEEN ? and ?)
+                    WHERE "start" BETWEEN ? and ?
                     
                     UNION ALL
                     
-                    (SELECT table_name as "table",
+                    SELECT table_name as "table",
                         started as "start",
                         NULL as "finish"
                     FROM tables
-                    WHERE started IS NOT NULL)
+                    WHERE started IS NOT NULL
                     
-                    ORDER BY start DESC''', (floor, ceiling)).fetchall()
+                    ''', (floor, ceiling)).fetchall()
 
 
 def get_table_details(db, table: str):
