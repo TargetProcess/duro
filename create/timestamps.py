@@ -37,9 +37,3 @@ class Timestamps:
     @property
     def duration(self) -> int:
         return self.finish - self.start
-        # if self.drop_old is not None:
-        #     return self.drop_old - self.start
-        # elif self.insert is not None:
-        #     return self.insert - self.start
-        # else:
-        #     return None

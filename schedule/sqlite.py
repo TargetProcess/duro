@@ -27,14 +27,16 @@ def save_tables(tables_and_queries: List[Tuple], cursor):
                             WHERE table_name = ? ''', (query, interval, table))
             if cursor.rowcount == 0:
                 cursor.execute('''INSERT INTO tables 
-                                VALUES (?, ?, ?, ?, ?, ?)''',
-                               (table, query, interval, None, 0, 0))
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                               (table, query, interval, None, 0, 0, 0, 0, 0))
     except sqlite3.OperationalError as e:
         if str(e).startswith('no such table'):
             cursor.execute('''CREATE TABLE IF NOT EXISTS tables
                                 (table_name text, query text, 
                                 interval integer, last_created integer,
-                                mean real, times_run integer);''')
+                                mean real, times_run integer,
+                                force integer, force_tree integer,
+                                started integer);''')
             save_tables(tables_and_queries, cursor)
         else:
             raise

@@ -104,7 +104,7 @@ def get_processor(table: str, path: str) -> str:
 
 
 def load_create_query(table: str, path: str) -> str:
-    print(f'Loading tests for {table}')
+    print(f'Loading create query for {table}')
     folder, file = table.split('.')
     create_file = os.path.join(path, folder, f'create_{file}.sql')
     if os.path.isfile(create_file):

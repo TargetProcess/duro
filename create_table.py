@@ -1,8 +1,8 @@
 import configparser
 import sys
-import arrow
 from typing import List
 
+import arrow
 import networkx as nx
 import psycopg2
 
@@ -11,7 +11,8 @@ from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
                              create_temp_table)
-from create.sqlite import load_info, update_last_created, log_timestamps
+from create.sqlite import (load_info, update_last_created, log_timestamps,
+                           log_start, is_running)
 from create.timestamps import Timestamps
 from credentials import redshift_credentials
 from errors import TableNotFoundError, MaterializationError
@@ -34,9 +35,11 @@ def get_children(root: str, graph: nx.DiGraph) -> List:
             'There’s no table with this name in configuration db.')
 
 
-def create_table(table: Table, db_path: str, views_path: str):
+def create_table(table: Table, db_path: str, views_path: str,
+                 force: bool = False):
     global tables_to_create_count
-    if not should_be_created(table.interval, table.last_created):
+    if not should_be_created(table.interval, table.last_created, force,
+                             is_running(table.name, db_path)):
         print(f'{table.name} is fresh enough')
         tables_to_create_count -= 1
         print(f'Tables remaining: {tables_to_create_count}')
@@ -44,6 +47,8 @@ def create_table(table: Table, db_path: str, views_path: str):
 
     ts = Timestamps()
     ts.log('start')
+    # noinspection PyUnresolvedReferences
+    log_start(table.name, db_path, ts.start)
     config = load_config(table.name, views_path)
     print(f'Creating {table.name} with interval {table.interval}')
 
@@ -79,8 +84,12 @@ def create_table(table: Table, db_path: str, views_path: str):
     print(f'Tables remaining: {tables_to_create_count}')
 
 
-def should_be_created(interval: int, last_created: int) -> bool:
+def should_be_created(interval: int, last_created: int, force: bool, already_running: bool) -> bool:
     return True
+    if already_running:
+        return False
+    if force:
+        return True
     if last_created is None or interval is None:
         return True
 
@@ -94,7 +103,9 @@ def create_connection():
     return connection
 
 
-def create_tree(root: str, global_config: GlobalConfig, interval: int = None):
+def create_tree(root: str, global_config: GlobalConfig,
+                interval: int = None, force: bool = False,
+                force_tree: bool = False):
     children = get_children(root, global_config.graph)
     table = load_info(root, global_config.db_path)
 
@@ -131,8 +142,8 @@ def main(root_table: str):
 
 
 if __name__ == '__main__':
-    main('tauspy.most_active_users')
-    # main('tauspy.daily_active_users')
+    # main('tauspy.most_active_users')
+    main('tauspy.daily_active_users')
     # main('tauspy.visits_flattened')
     # main('tauspy.vizydrop_description')
     # main('licenses.changes')
