@@ -1,4 +1,6 @@
 import csv
+import gzip
+import io
 import importlib.machinery
 import arrow
 from typing import List, Dict
@@ -42,7 +44,7 @@ def process_data(data: List[Dict], processor: str) -> List[Dict]:
 
 def upload_to_temp_table(data: List[Dict], table: str, config: Dict,
                          connection, ts: Timestamps, views_path: str) -> int:
-    filename = f'{s3_credentials()["folder"]}/{table}-{arrow.now().strftime("%Y-%m-%d-%H-%M")}.csv'
+    filename = f'{s3_credentials()["folder"]}/{table}-{arrow.now().strftime("%Y-%m-%d-%H-%M")}.csv.gzip'
     print(f'Saving to CSV')
     save_to_csv(data, filename)
     ts.log('csv')
@@ -62,8 +64,9 @@ def upload_to_temp_table(data: List[Dict], table: str, config: Dict,
 
 
 def save_to_csv(data: List[Dict], filename: str):
-    with open(filename, 'w') as output_file:
-        dict_writer = csv.DictWriter(output_file, data[0].keys(),
+    with gzip.open(filename, 'wt', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file,
+                                     data[0].keys(),
                                      delimiter=';', escapechar='\\')
         dict_writer.writeheader()
         dict_writer.writerows(data)
@@ -85,7 +88,7 @@ def build_drop_and_create_query(table: str, config: Dict, views_path: str):
         create_query += f'{keys.distkey}\n'
     if 'sortkey' not in create_query:
         create_query += f'{keys.sortkey}\n'
-    return create_query
+    return f'DROP TABLE IF EXISTS {table}_temp; {create_query}'
 
 
 def copy_to_redshift(filename: str, table: str, connection,
@@ -93,13 +96,13 @@ def copy_to_redshift(filename: str, table: str, connection,
     with connection.cursor() as cursor:
         cursor.execute(drop_and_create_query)
         connection.commit()
-        cursor.execute(f'''COPY {table} FROM 's3://{s3_credentials()["bucket"]}/{filename}'
+        cursor.execute(f'''COPY {table}_temp FROM 's3://{s3_credentials()["bucket"]}/{filename}'
         --region 'us-east-1'
         access_key_id '{s3_credentials()["aws_access_key_id"]}'
         secret_access_key '{s3_credentials()["aws_secret_access_key"]}'
         delimiter ';'
         ignoreheader 1
-        emptyasnull blanksasnull csv;''')
+        emptyasnull blanksasnull csv gzip;''')
         connection.commit()
         return arrow.now().timestamp
 

@@ -32,7 +32,7 @@ def get_children(root: str, graph: nx.DiGraph) -> List:
         return children
     except KeyError:
         raise TableNotFoundError(
-            'There’s no table with this name in configuration db.')
+            'There’s no table with this name in dependencies graph.')
 
 
 def create_table(table: Table, db_path: str, views_path: str,
@@ -103,25 +103,6 @@ def create_connection():
     return connection
 
 
-def create_tree(root: str, global_config: GlobalConfig,
-                interval: int = None, force: bool = False,
-                force_tree: bool = False):
-    children = get_children(root, global_config.graph)
-    table = load_info(root, global_config.db_path)
-
-    if table.interval is None and interval is not None:
-        print(f'Updating interval for {root}')
-        # noinspection PyArgumentList
-        table = Table(table.name, table.query, interval, table.last_created)
-
-    for child in children:
-        create_tree(child, global_config, table.interval)
-    try:
-        create_table(table, global_config.db_path, global_config.views_path)
-    except MaterializationError as e:
-        print(e)
-
-
 def load_global_config() -> GlobalConfig:
     try:
         config = configparser.ConfigParser()
@@ -137,14 +118,32 @@ def load_global_config() -> GlobalConfig:
         sys.exit(1)
 
 
-def main(root_table: str):
-    create_tree(root_table, load_global_config())
+def create_tree(root: str, global_config: GlobalConfig,
+                interval: int = None, force_tree: bool = False):
+    children = get_children(root, global_config.graph)
+    table = load_info(root, global_config.db_path)
+
+    if table.interval is None and interval is not None:
+        print(f'Updating interval for {root}')
+        # noinspection PyArgumentList
+        table = Table(table.name, table.query, interval, table.last_created)
+
+    for child in children:
+        create_tree(child, global_config, table.interval, force_tree)
+    try:
+        create_table(table, global_config.db_path, global_config.views_path, force_tree)
+    except MaterializationError as e:
+        print(e)
+
+
+def create(root_table: str, force_tree: bool = False):
+    create_tree(root_table, load_global_config(), force_tree=force_tree)
 
 
 if __name__ == '__main__':
     # main('tauspy.most_active_users')
-    main('tauspy.daily_active_users')
-    # main('tauspy.visits_flattened')
+    # main('tauspy.daily_active_users')
+    create('custom.languages', force_tree=True)
     # main('tauspy.vizydrop_description')
     # main('licenses.changes')
     # feedback.contacts
