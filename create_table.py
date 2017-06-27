@@ -1,6 +1,7 @@
 import configparser
 import sys
 from typing import List
+import time
 
 import arrow
 import networkx as nx
@@ -38,8 +39,14 @@ def get_children(root: str, graph: nx.DiGraph) -> List:
 def create_table(table: Table, db_path: str, views_path: str,
                  force: bool = False):
     global tables_to_create_count
-    if not should_be_created(table.interval, table.last_created, force,
-                             is_running(table.name, db_path)):
+
+    if is_running(table.name, db_path):
+        print('Already running, waiting till done')
+        wait_till_finished(table.name, db_path)
+        tables_to_create_count -= 1
+        print(f'Tables remaining: {tables_to_create_count}')
+
+    if not should_be_created(table.interval, table.last_created, force):
         print(f'{table.name} is fresh enough')
         tables_to_create_count -= 1
         print(f'Tables remaining: {tables_to_create_count}')
@@ -84,10 +91,15 @@ def create_table(table: Table, db_path: str, views_path: str,
     print(f'Tables remaining: {tables_to_create_count}')
 
 
-def should_be_created(interval: int, last_created: int, force: bool, already_running: bool) -> bool:
+def wait_till_finished(table: str, db: str):
+    timeout = 10
+    while is_running(table, db):
+        time.sleep(timeout)
+        timeout += 10
+
+
+def should_be_created(interval: int, last_created: int, force: bool) -> bool:
     return True
-    if already_running:
-        return False
     if force:
         return True
     if last_created is None or interval is None:
@@ -141,9 +153,9 @@ def create(root_table: str, force_tree: bool = False):
 
 
 if __name__ == '__main__':
-    # main('tauspy.most_active_users')
-    # main('tauspy.daily_active_users')
-    create('custom.languages', force_tree=True)
-    # main('tauspy.vizydrop_description')
-    # main('licenses.changes')
+    create('tauspy.most_active_users')
+    # create('tauspy.daily_active_users')
+    # create('custom.languages', force_tree=True)
+    # create('tauspy.vizydrop_description')
+    # create('licenses.changes')
     # feedback.contacts
