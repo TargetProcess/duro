@@ -14,6 +14,7 @@ def save_to_db(graph: nx.DiGraph, db_path: str, commit: str):
                           nodes.items()]
     save_tables(tables_and_queries, cursor)
     save_commit(commit, cursor)
+    mark_deleted_tables(tables_and_queries, cursor)
 
     connection.commit()
     connection.close()
@@ -36,7 +37,7 @@ def save_tables(tables_and_queries: List[Tuple], cursor):
                                 interval integer, last_created integer,
                                 mean real, times_run integer,
                                 force integer, force_tree integer,
-                                started integer);''')
+                                started integer, deleted integer);''')
             save_tables(tables_and_queries, cursor)
         else:
             raise
@@ -54,3 +55,10 @@ def save_commit(commit: str, cursor):
                 save_commit(commit, cursor)
             else:
                 raise
+
+
+def mark_deleted_tables(tables_and_queries: List[Tuple], cursor):
+    tables = (table for table, _, _ in tables_and_queries)
+    cursor.execute('''UPDATE tables
+                    SET deleted = (strftime('%s', 'now')
+                    WHERE table_name not in ?''', tables)

@@ -2,6 +2,7 @@ import sqlite3
 
 from create.timestamps import Timestamps
 from utils import Table
+from typing import List, Tuple
 
 
 def load_info(table: str, db: str) -> Table:
@@ -59,7 +60,8 @@ def is_running(table: str, db: str) -> bool:
                     FROM tables
                     WHERE table_name = ?''',
                        (table,))
-        return cursor.fetchone()[0]
+        result = cursor.fetchone()
+        return result[0] if result else False
 
 
 def build_query_to_create_timestamps_table():
@@ -68,3 +70,18 @@ def build_query_to_create_timestamps_table():
             ("table" text, 
             {",".join(events)}
             )'''
+
+
+def get_tables_to_create(db: str) -> List[Tuple]:
+    print('Getting tables')
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute(f'''SELECT table_name, force_tree 
+            FROM tables
+            WHERE (force = 1 
+            OR force_tree = 1)
+            --OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
+            --OR last_created IS NULL
+            AND deleted IS NULL
+                            ''')
+        return cursor.fetchall()
