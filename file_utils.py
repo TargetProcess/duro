@@ -108,9 +108,11 @@ def load_create_query(table: str, path: str) -> str:
     folder, file = table.split('.')
     create_file = os.path.join(path, folder, f'create_{file}.sql')
     if os.path.isfile(create_file):
-        return read_file(create_file)
+        query = read_file(create_file)
     else:
         create_file = os.path.join(path, f'create_{table}.sql')
         if os.path.isfile(create_file):
-            return read_file(create_file)
-    return ''
+            query = read_file(create_file)
+        else:
+            query = ''
+    return query.lower().replace(f'create table {table}', f'create table {table}_temp')
