@@ -52,7 +52,12 @@ def close_connection(exception):
 
 @app.route('/tables/')
 def show_list():
-    return render_template('list_tables.html', tables=get_all_tables(get_db()))
+    return render_template('list_tables.html')
+
+
+@app.route('/api/tables/')
+def get_tables():
+    return jsonify([dict(table) for table in get_all_tables(get_db())])
 
 
 @app.route('/')
@@ -72,7 +77,7 @@ def show_current(from_date: str = None, to_date: str = None):
                            ceiling=ceiling)
 
 
-@app.route('/jobs')
+@app.route('/api/jobs')
 def jobs():
     db = get_db()
     print(request.args.get('from'), type(request.args.get('from')))
@@ -111,7 +116,8 @@ def register_update_request():
         return jsonify({'message': 'Already running'})
 
     set_table_for_update(get_db(), table, force_tree_update)
-    return jsonify({'message': f'Scheduled {table} for update'})
+    return jsonify({'message': f'Scheduled {table} for update',
+                    'table': table})
 
 
 def main():

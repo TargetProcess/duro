@@ -1,5 +1,5 @@
 
-$.ajax('/jobs?from=' + floor + '&to=' + ceiling).done(function(data) {
+$.ajax('/api/jobs?from=' + floor + '&to=' + ceiling).done(function(data) {
     var chart = new tauCharts.Chart({
         data: data,
         type: 'horizontal-bar',

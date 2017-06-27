@@ -19,22 +19,6 @@
         </tr>
         </thead>
         <tbody>
-        {% for table in tables %}
-        <tr>
-            <td class="align-middle"><a href="/tables/{{ table.table_name }}">{{ table.table_name }}</a></td>
-            <!--<td class="align-middle">{{ table.interval|format_interval }}</td>-->
-            <td class="align-middle">{{ table.interval|skip_none }}</td>
-            <td class="align-middle">{{ table.last_created|format_int_as_date }}</td>
-            <!--<td class="align-middle">{{ table.mean|format_avg_time }}</td>-->
-            <td class="align-middle">{{ table.mean|skip_none }}</td>
-            <td>
-                <button class='btn' id="update-{{ table.table_name }}">Update table</button>
-            </td>
-            <td>
-                <button class='btn' id="update-tree-{{ table.table_name }}">Update subtree</button>
-            </td>
-        </tr>
-        {% endfor %}
         </tbody>
     </table>
 </div>
@@ -43,5 +27,5 @@
 
 <script src="{{ url_for('static', filename='lib/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ url_for('static', filename='list.js') }}"></script>
+<script src="{{ url_for('static', filename='listTables.js') }}"></script>
 {% endblock %}

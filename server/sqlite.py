@@ -1,8 +1,7 @@
 def get_all_tables(db):
     return db.execute('''
-            SELECT table_name, interval, last_created, mean
-            FROM tables 
-            ORDER BY last_created DESC''').fetchall()
+            SELECT table_name, interval, last_created, mean, started, deleted
+            FROM tables''').fetchall()
 
 
 def get_jobs(floor: int, ceiling: int, db):
