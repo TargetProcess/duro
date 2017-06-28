@@ -58,7 +58,8 @@ def save_commit(commit: str, cursor):
 
 
 def mark_deleted_tables(tables_and_queries: List[Tuple], cursor):
-    tables = (table for table, _, _ in tables_and_queries)
-    cursor.execute('''UPDATE tables
-                    SET deleted = (strftime('%s', 'now')
-                    WHERE table_name not in ?''', tables)
+    tables = tuple(table for table, _, _ in tables_and_queries)
+    cursor.execute(f'''UPDATE tables
+                    SET deleted = strftime('%s', 'now')
+                    WHERE table_name NOT IN {str(tables)}
+                    AND deleted IS NULL''')
