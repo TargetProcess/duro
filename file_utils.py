@@ -42,13 +42,13 @@ def list_view_files(path: str) -> List[Tuple[str, dict]]:
 
 
 def is_processor_ddl(filename: str) -> bool:
-    if 'create_' not in filename:
+    if '_ddl' not in filename:
         return False
     path = os.path.dirname(filename)
     file = os.path.basename(filename)
-    table_name = file.replace('create_', '')
+    table_name = file.replace('_ddl', '')
     processor_file = os.path.join(path, f'{splitext(table_name)[0].split()[0]}.py')
-    if os.path.isfile(processor_file) and file.startswith('create_'):
+    if os.path.isfile(processor_file) and file.endswith('_ddl.sql'):
         return True
     return False
 
@@ -106,11 +106,11 @@ def get_processor(table: str, path: str) -> str:
 def load_create_query(table: str, path: str) -> str:
     print(f'Loading create query for {table}')
     folder, file = table.split('.')
-    create_file = os.path.join(path, folder, f'create_{file}.sql')
+    create_file = os.path.join(path, folder, f'{file}_ddl.sql')
     if os.path.isfile(create_file):
         query = read_file(create_file)
     else:
-        create_file = os.path.join(path, f'create_{table}.sql')
+        create_file = os.path.join(path, f'{table}_ddl.sql')
         if os.path.isfile(create_file):
             query = read_file(create_file)
         else:
