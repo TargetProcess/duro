@@ -3,7 +3,7 @@ from typing import Dict
 
 import psycopg2
 
-from create.config import add_dist_sort_keys
+from create.config import add_dist_sort_keys, add_grant_select_statements
 from errors import TableCreationError
 
 
@@ -11,6 +11,7 @@ def create_temp_table(table: str, query: str, config: Dict, connection) -> int:
     print(f'Creating temp table for {table}')
 
     create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)
+    create_query = add_grant_select_statements(table, create_query, config)
     full_query = f'''DROP TABLE IF EXISTS {table}_temp;
                 {create_query}
                 '''
