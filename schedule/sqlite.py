@@ -24,12 +24,12 @@ def save_tables(tables_and_queries: List[Tuple], cursor):
     try:
         for table, query, interval in tables_and_queries:
             cursor.execute('''UPDATE tables 
-                            SET query = ?, interval = ?, times_run = 0, mean = 0
+                            SET query = ?, interval = ?
                             WHERE table_name = ? ''', (query, interval, table))
             if cursor.rowcount == 0:
                 cursor.execute('''INSERT INTO tables 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                               (table, query, interval, None, 0, 0, 0, 0, 0))
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                               (table, query, interval, None, 0, 0, 0, 0, 0, None))
     except sqlite3.OperationalError as e:
         if str(e).startswith('no such table'):
             cursor.execute('''CREATE TABLE IF NOT EXISTS tables
