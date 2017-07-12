@@ -28,3 +28,15 @@ class TableNotFoundError(MaterializationError):
 
 class TableCreationError(MaterializationError):
     """Couldn’t create a table in Redshift"""
+
+
+class ProcessorNotFoundError(MaterializationError):
+    """Could’t load a processor"""
+
+
+class RedshiftUploadError(MaterializationError):
+    """Could’t copy a table into Redshift"""
+
+
+class RedshiftConnectionError(MaterializationError):
+    """Couldn‘t connect to Redshift"""

@@ -13,23 +13,26 @@ from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
                              create_temp_table)
 from create.sqlite import (load_info, update_last_created, log_timestamps,
-                           log_start, is_running)
+                           log_start, is_running, reset_start,
+                           get_tables_to_create)
 from create.timestamps import Timestamps
 from credentials import redshift_credentials
-from errors import TableNotFoundError, MaterializationError
+from errors import TableNotFoundError, MaterializationError, \
+    RedshiftConnectionError
 from file_utils import get_processor
 from utils import GlobalConfig, Table
 
-tables_to_create_count = 1
+from notifications.sentry import post_to_sentry
+from raven import Client
+
+
+tables_to_create_count = 0
 
 
 def get_children(root: str, graph: nx.DiGraph) -> List:
-    global tables_to_create_count
     try:
         children = list(graph[root].keys())
-        tables_to_create_count += len(children)
         print(f'Children of {root}: {children}')
-        print(f'Tables remaining: {tables_to_create_count}')
         return children
     except KeyError:
         raise TableNotFoundError(
@@ -39,18 +42,6 @@ def get_children(root: str, graph: nx.DiGraph) -> List:
 def create_table(table: Table, db_path: str, views_path: str,
                  force: bool = False):
     global tables_to_create_count
-
-    if is_running(table.name, db_path):
-        print('Already running, waiting till done')
-        wait_till_finished(table.name, db_path)
-        tables_to_create_count -= 1
-        print(f'Tables remaining: {tables_to_create_count}')
-
-    if not should_be_created(table.interval, table.last_created, force):
-        print(f'{table.name} is fresh enough')
-        tables_to_create_count -= 1
-        print(f'Tables remaining: {tables_to_create_count}')
-        return
 
     ts = Timestamps()
     ts.log('start')
@@ -85,7 +76,7 @@ def create_table(table: Table, db_path: str, views_path: str,
     ts.log('drop_old')
     connection.close()
 
-    update_last_created(db_path, table.name, creation_timestamp, ts.duration)
+    update_last_created(db_path, table.name, creation_timestamp, ts.duration, force)
     log_timestamps(table.name, db_path, ts)
     tables_to_create_count -= 1
     print(f'Tables remaining: {tables_to_create_count}')
@@ -94,25 +85,46 @@ def create_table(table: Table, db_path: str, views_path: str,
 def wait_till_finished(table: str, db: str):
     timeout = 10
     while is_running(table, db):
+        print(f'Waiting for {timeout} seconds')
         time.sleep(timeout)
-        timeout += 10
+        # timeout += 10
 
 
-def should_be_created(interval: int, last_created: int, force: bool) -> bool:
-    return True
+def should_be_created(table: Table, db_path: str, force: bool) -> bool:
+    global tables_to_create_count
+
+    if is_running(table.name, db_path):
+        print('Already running, waiting till done')
+        wait_till_finished(table.name, db_path)
+        tables_to_create_count -= 1
+        print(f'Tables remaining: {tables_to_create_count}')
+        return False
+
     if force:
         return True
-    if last_created is None or interval is None:
+
+    if table.last_created is None or table.interval is None:
         return True
 
-    delta = arrow.now() - arrow.get(last_created)
-    return (delta.total_seconds() / 60) > interval
+    delta = arrow.now() - arrow.get(table.last_created)
+    fresh = (delta.total_seconds() / 60) <= table.interval
+
+    if fresh:
+        print(f'{table.name} is fresh enough')
+        tables_to_create_count -= 1
+        print(f'Tables remaining: {tables_to_create_count}')
+        return False
+    else:
+        return True
 
 
 def create_connection():
-    connection = psycopg2.connect(**redshift_credentials())
-    connection.autocommit = True
-    return connection
+    try:
+        connection = psycopg2.connect(**redshift_credentials())
+        connection.autocommit = True
+        return connection
+    except psycopg2.OperationalError:
+        raise RedshiftConnectionError
 
 
 def load_global_config() -> GlobalConfig:
@@ -132,30 +144,48 @@ def load_global_config() -> GlobalConfig:
 
 def create_tree(root: str, global_config: GlobalConfig,
                 interval: int = None, force_tree: bool = False):
+    global tables_to_create_count
+
     children = get_children(root, global_config.graph)
     table = load_info(root, global_config.db_path)
+    # client = Client(
+    #     'https://03d888da88284f44a1574a9ba18685b5:c59bc7f260584cfaab8a7e0e69e4f7d7@sentry.io/165573')
+    # client.captureMessage('Sending from views')
 
     if table.interval is None and interval is not None:
         print(f'Updating interval for {root}')
         # noinspection PyArgumentList
         table = Table(table.name, table.query, interval, table.last_created)
 
+    if not should_be_created(table, global_config.db_path, force_tree):
+        return
+
+    tables_to_create_count += len(children)
+    print(f'Tables remaining: {tables_to_create_count}')
+
+    if table.name == 'satisfaction.companies':
+        create_table(table, global_config.db_path, global_config.views_path,
+                     force_tree)
     for child in children:
         create_tree(child, global_config, table.interval, force_tree)
     try:
         create_table(table, global_config.db_path, global_config.views_path, force_tree)
     except MaterializationError as e:
         print(e)
+        reset_start(table.name, global_config.db_path)
+        # client.captureException()
 
 
 def create(root_table: str, force_tree: bool = False):
+    global tables_to_create_count
+    tables_to_create_count += 1
     create_tree(root_table, load_global_config(), force_tree=force_tree)
 
 
 if __name__ == '__main__':
-    create('tauspy.most_active_users')
-    # create('tauspy.daily_active_users')
-    # create('custom.languages', force_tree=True)
-    # create('tauspy.vizydrop_description')
-    # create('licenses.changes')
-    # feedback.contacts
+    new_tables = get_tables_to_create('./duro.db')
+    print(len(new_tables), new_tables)
+    for t, _ in new_tables:
+        create(t)
+
+    # create('licenses.current')
