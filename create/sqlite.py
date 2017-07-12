@@ -15,7 +15,7 @@ def load_info(table: str, db: str) -> Table:
         return Table(table, *cursor.fetchone())
 
 
-def update_last_created(db: str, table: str, timestamp: int, duration: int):
+def update_last_created(db: str, table: str, timestamp: int, duration: int, forced_tree: bool):
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute('''UPDATE tables 
@@ -27,9 +27,13 @@ def update_last_created(db: str, table: str, timestamp: int, duration: int):
                             times_run = 
                                 (CASE WHEN times_run IS NOT NULL THEN times_run + 1
                                 ELSE 1 END),
-                            started = NULL
+                            started = NULL,
+                            force = NULL
                         WHERE table_name = ? ''',
                        (timestamp, duration, duration, table))
+        if forced_tree:
+            cursor.execute('''UPDATE tables 
+                        SET force_tree = NULL''')
 
 
 def log_timestamps(table: str, db: str, timestamps: Timestamps):
@@ -51,6 +55,13 @@ def log_start(table: str, db: str, start_ts: int):
         connection.execute(f'''UPDATE tables SET started = ?
                         WHERE table_name = ?''',
                            (start_ts, table))
+
+
+def reset_start(table: str, db: str):
+    with sqlite3.connect(db) as connection:
+        connection.execute(f'''UPDATE tables SET started = NULL
+                        WHERE table_name = ?''',
+                           (table, ))
 
 
 def is_running(table: str, db: str) -> bool:
@@ -78,10 +89,10 @@ def get_tables_to_create(db: str) -> List[Tuple]:
         cursor = connection.cursor()
         cursor.execute(f'''SELECT table_name, force_tree 
             FROM tables
-            WHERE (force = 1 
+            WHERE ((force = 1 
             OR force_tree = 1)
-            --OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
-            --OR last_created IS NULL
+            OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
+            OR last_created IS NULL)
             AND deleted IS NULL
                             ''')
         return cursor.fetchall()
