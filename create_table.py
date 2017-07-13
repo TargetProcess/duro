@@ -20,9 +20,6 @@ from errors import (TableNotFoundError, MaterializationError)
 from file_utils import get_processor
 from utils import GlobalConfig, Table
 
-from notifications.sentry import post_to_sentry
-from raven import Client
-
 
 tables_to_create_count = 0
 
