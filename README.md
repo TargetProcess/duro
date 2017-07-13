@@ -19,7 +19,7 @@ schema_name/
 **Where:**
 `table_name - INTERVAL.sql` file name should have following format:
 **table_name** - name of your table inside scheme
-**interval** - time interval for update (e.g `changes — 24h.sql` means your table `changes` will be updated every 24 hour)
+**interval** - time interval for update (e.g `changes — 24h.sql` means your table `changes` will be updated every 24 hour). If interval is not set your table will be updated only when some other view make request to your table.
 
 `table_name_ddl.sql` - file with structure og destination table. It's common sql *create table* query
 
@@ -58,7 +58,7 @@ So your table will be represented as following list:
 https://github.com/TargetProcess/materialized-views
 2. Create directory (schema name) or use existed derictory.
 3. Create file `destination_table - Interval.sql` inside your scheme directory (mandatory)
-4. Create file `destination_table.sql` with structure of your destination table (mandatory)
-5. Create file `destination_table.py` (optional)
+4. Create processor file `destination_table.py` (optional)
+5. Create file `destination_table_ddl.sql` with structure of your destination table (if you create processor: destination_table.py)
 6. Commit files to repository
 
