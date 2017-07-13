@@ -17,7 +17,7 @@ from create.sqlite import (load_info, update_last_created, log_timestamps,
                            get_tables_to_create, propagate_force_flag)
 from create.timestamps import Timestamps
 from errors import (TableNotFoundError, MaterializationError)
-from file_utils import get_processor
+from file_utils import load_processor
 from utils import GlobalConfig, Table
 
 
@@ -41,14 +41,14 @@ def create_table(table: Table, db_path: str, views_path: str,
     ts = Timestamps()
     ts.log('start')
     # noinspection PyUnresolvedReferences
-    log_start(table.name, db_path, ts.start)
+    # log_start(table.name, db_path, ts.start)
     config = load_config(table.name, views_path)
     print(f'Creating {table.name} with interval {table.interval}')
 
     connection = create_connection()
     ts.log('connect')
 
-    processor = get_processor(table.name, views_path)
+    processor = load_processor(table.name, views_path)
     if processor:
         creation_timestamp = process_and_upload_data(table, processor,
                                                      connection, config, ts,
@@ -133,9 +133,6 @@ def create_tree(root: str, global_config: GlobalConfig,
     global tables_to_create_count
 
     table = load_info(root, global_config.db_path)
-    # client = Client(
-    #     'https://03d888da88284f44a1574a9ba18685b5:c59bc7f260584cfaab8a7e0e69e4f7d7@sentry.io/165573')
-    # client.captureMessage('Sending from views')
 
     if table.interval is None and interval is not None:
         print(f'Updating interval for {root}')
@@ -161,7 +158,6 @@ def create_tree(root: str, global_config: GlobalConfig,
     except MaterializationError as e:
         print(e)
         reset_start(table.name, global_config.db_path)
-        # client.captureException()
 
 
 def handle_cycles(force_tree: bool, global_config: GlobalConfig, table: Table):

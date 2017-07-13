@@ -10,7 +10,7 @@ import tinys3
 from create.config import load_dist_sort_keys, add_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
-from file_utils import load_create_query
+from file_utils import load_ddl_query
 from utils import Table
 from errors import ProcessorNotFoundError, RedshiftUploadError
 
@@ -37,8 +37,8 @@ def select_data(query: str, connection) -> List[Dict]:
 
 def load_processor(processor: str) -> Tuple:
     try:
-        loader = importlib.machinery.SourceFileLoader(f'{processor}.py',
-                                                      f'{processor}.py')
+        loader = importlib.machinery.SourceFileLoader(processor,
+                                                      processor)
         processor_module = loader.load_module()
         return processor_module.process, processor_module.columns
     except AttributeError:
@@ -92,7 +92,7 @@ def upload_to_s3(filename: str):
 
 def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     keys = load_dist_sort_keys(table, config)
-    create_query = load_create_query(table, views_path).rstrip(';\n')
+    create_query = load_ddl_query(table, views_path).rstrip(';\n')
     if 'diststyle' not in create_query:
         create_query += f'{keys.diststyle}\n'
     if 'distkey' not in create_query:

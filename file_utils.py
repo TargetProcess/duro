@@ -1,10 +1,10 @@
-from os.path import splitext
-import glob
-from typing import List, Tuple, NamedTuple, Dict
-from functools import lru_cache
 import configparser
-from itertools import chain
+import glob
 import os
+from functools import lru_cache
+from itertools import chain
+from os.path import splitext
+from typing import List, Tuple, NamedTuple, Dict
 
 
 class ViewFile(NamedTuple):
@@ -36,9 +36,18 @@ def parse_view(filename: str, path: str) -> ViewFile:
 def list_view_files(path: str) -> List[Tuple[str, dict]]:
     views = [parse_view(file, path)
              for file in glob.glob(path + '/**/*.sql', recursive=True)
-             if not file.endswith('_test.sql') and not is_processor_ddl(file)]
-    return [(view.table, {'contents': view.contents, 'interval': convert_interval_to_integer(view.interval)})
+             if is_query(file)]
+    return [(view.table, {'contents': view.contents,
+                          'interval': convert_interval_to_integer(
+                              view.interval)})
             for view in views]
+
+
+def is_query(file: str) -> bool:
+    return (file.endswith('.sql')
+            and not file.endswith('_test.sql')
+            and not is_processor_ddl(file)
+            and os.path.isfile(file))
 
 
 def is_processor_ddl(filename: str) -> bool:
@@ -47,7 +56,8 @@ def is_processor_ddl(filename: str) -> bool:
     path = os.path.dirname(filename)
     file = os.path.basename(filename)
     table_name = file.replace('_ddl', '')
-    processor_file = os.path.join(path, f'{splitext(table_name)[0].split()[0]}.py')
+    processor_file = os.path.join(path,
+                                  f'{splitext(table_name)[0].split()[0]}.py')
     if os.path.isfile(processor_file) and file.endswith('_ddl.sql'):
         return True
     return False
@@ -72,7 +82,8 @@ def read_config(filename: str) -> Dict:
 
 
 def unzip(list_of_tuples: List) -> Tuple[List, List]:
-    return [item[0] for item in list_of_tuples], [item[1] for item in list_of_tuples]
+    return [item[0] for item in list_of_tuples], [item[1] for item in
+                                                  list_of_tuples]
 
 
 def convert_interval_to_integer(interval: str) -> int:
@@ -90,29 +101,35 @@ def convert_interval_to_integer(interval: str) -> int:
         raise ValueError('Invalid interval')
 
 
-def get_processor(table: str, path: str) -> str:
-    print(f'Loading tests for {table}')
+def find_file_for_table(table: str, path: str, match: callable) -> str:
     folder, file = table.split('.')
-    processor_file = os.path.join(path, folder, f'{file}.py')
-    if os.path.isfile(processor_file):
-        return os.path.splitext(processor_file)[0]
+    files_inside = [file
+                    for file in
+                    glob.glob(os.path.join(path, folder, f'{file}*'))
+                    if match(file)]
+    if len(files_inside) and os.path.isfile(files_inside[0]):
+        return files_inside[0]
     else:
-        processor_file = os.path.join(path, f'{table}.py')
-        if os.path.isfile(processor_file):
-            return os.path.splitext(processor_file)[0]
+        files_outside = [file for file in
+                         glob.glob(os.path.join(path, table, '*'))
+                         if match(file)]
+        if len(files_outside) and os.path.isfile(files_outside[0]):
+            return files_outside[0]
     return ''
 
 
-def load_create_query(table: str, path: str) -> str:
+def load_processor(table: str, path: str) -> str:
+    print(f'Loading tests for {table}')
+    return find_file_for_table(table, path, lambda s: s.endswith('.py'))
+
+
+def load_ddl_query(table: str, path: str) -> str:
     print(f'Loading create query for {table}')
-    folder, file = table.split('.')
-    create_file = os.path.join(path, folder, f'{file}_ddl.sql')
-    if os.path.isfile(create_file):
-        query = read_file(create_file)
-    else:
-        create_file = os.path.join(path, f'{table}_ddl.sql')
-        if os.path.isfile(create_file):
-            query = read_file(create_file)
-        else:
-            query = ''
-    return query.lower().replace(f'create table {table}', f'create table {table}_temp')
+    query = read_file(
+        find_file_for_table(table, path, lambda s: s.endswith('_ddl.sql')))
+    return query.lower().replace(f'create table {table}',
+                                 f'create table {table}_temp')
+
+
+def load_query(table: str, path: str) -> str:
+    return read_file(find_file_for_table(table, path, is_query))
