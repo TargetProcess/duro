@@ -1,24 +1,22 @@
 import configparser
 import sys
+from datetime import datetime
 from typing import List
 import time
 
 import arrow
 import networkx as nx
-import psycopg2
 
 from create.config import load_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
-                             create_temp_table)
+                             create_temp_table, create_connection)
 from create.sqlite import (load_info, update_last_created, log_timestamps,
                            log_start, is_running, reset_start,
-                           get_tables_to_create)
+                           get_tables_to_create, propagate_force_flag)
 from create.timestamps import Timestamps
-from credentials import redshift_credentials
-from errors import TableNotFoundError, MaterializationError, \
-    RedshiftConnectionError
+from errors import (TableNotFoundError, MaterializationError)
 from file_utils import get_processor
 from utils import GlobalConfig, Table
 
@@ -118,15 +116,6 @@ def should_be_created(table: Table, db_path: str, force: bool) -> bool:
         return True
 
 
-def create_connection():
-    try:
-        connection = psycopg2.connect(**redshift_credentials())
-        connection.autocommit = True
-        return connection
-    except psycopg2.OperationalError:
-        raise RedshiftConnectionError
-
-
 def load_global_config() -> GlobalConfig:
     try:
         config = configparser.ConfigParser()
@@ -146,7 +135,6 @@ def create_tree(root: str, global_config: GlobalConfig,
                 interval: int = None, force_tree: bool = False):
     global tables_to_create_count
 
-    children = get_children(root, global_config.graph)
     table = load_info(root, global_config.db_path)
     # client = Client(
     #     'https://03d888da88284f44a1574a9ba18685b5:c59bc7f260584cfaab8a7e0e69e4f7d7@sentry.io/165573')
@@ -160,12 +148,15 @@ def create_tree(root: str, global_config: GlobalConfig,
     if not should_be_created(table, global_config.db_path, force_tree):
         return
 
+    children = get_children(root, global_config.graph)
+    if force_tree:
+        propagate_force_flag(table.name, global_config.db_path, global_config.graph)
+
     tables_to_create_count += len(children)
     print(f'Tables remaining: {tables_to_create_count}')
 
-    if table.name == 'satisfaction.companies':
-        create_table(table, global_config.db_path, global_config.views_path,
-                     force_tree)
+    handle_cycles(force_tree, global_config, table)
+
     for child in children:
         create_tree(child, global_config, table.interval, force_tree)
     try:
@@ -176,6 +167,12 @@ def create_tree(root: str, global_config: GlobalConfig,
         # client.captureException()
 
 
+def handle_cycles(force_tree: bool, global_config: GlobalConfig, table: Table):
+    if table.name == 'satisfaction.companies':
+        create_table(table, global_config.db_path, global_config.views_path,
+                     force_tree)
+
+
 def create(root_table: str, force_tree: bool = False):
     global tables_to_create_count
     tables_to_create_count += 1
@@ -183,9 +180,9 @@ def create(root_table: str, force_tree: bool = False):
 
 
 if __name__ == '__main__':
-    new_tables = get_tables_to_create('./duro.db')
-    print(len(new_tables), new_tables)
-    for t, _ in new_tables:
-        create(t)
-
-    # create('licenses.current')
+    while True:
+        new_tables = get_tables_to_create('./duro.db')
+        print(datetime.now(), len(new_tables), 'new tables')
+        for t, _ in new_tables:
+            create(t)
+        time.sleep(30)

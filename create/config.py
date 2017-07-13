@@ -22,6 +22,11 @@ def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
             AS ({query});'''
 
 
+def add_grant_select_statements(table: str, query: str, config: Dict) -> str:
+    return f'''{query}; 
+        GRANT SELECT ON {table}_temp TO sqlpad, tableau, tp_user, livechat, feedback'''
+
+
 def load_config(full_table_name: str, path: str) -> Dict:
     schema, table = full_table_name.split('.')
 

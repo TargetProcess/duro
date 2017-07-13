@@ -1,6 +1,7 @@
 import networkx as nx
 
-from graph_utils import find_sources, find_sources_without_attribute, copy_graph_without_attributes
+from graph_utils import (find_sources, find_sources_without_attribute,
+                         copy_graph_without_attributes, get_all_successors)
 
 no_sources = nx.DiGraph([[1, 2], [3, 4], [3, 1], [4, 2], [2, 3]], name='no sources')
 
@@ -88,3 +89,15 @@ def test_copy_graph_without_attributes():
     for node in no_attributes:
         assert node[1].get('a') is None
     assert no_a_attribute[0][1].get('b') == 44
+
+
+def test_get_all_successor():
+    two_level_tree = nx.DiGraph([[1, 2], [1, 3], [1, 4], [2, 5], [2, 6]])
+    three_level_tree = nx.DiGraph([[1, 2], [1, 3], [1, 4], [2, 5], [2, 6], [3, 7], [5, 8]])
+
+    assert get_all_successors(simple_tree, 1) == [1, 2, 3, 4, 5]
+    assert sorted(get_all_successors(two_level_tree, 1)) == [1, 2, 3, 4, 5, 6]
+    assert sorted(get_all_successors(three_level_tree, 1)) == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert sorted(get_all_successors(three_level_tree, 2)) == [2, 5, 6, 8]
+    assert sorted(get_all_successors(graph_one, 1)) == [1, 3, 4, 5, 6, 7, 8, 9]
+    assert sorted(get_all_successors(graph_one, 5)) == [5, 7, 8, 9]

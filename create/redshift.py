@@ -4,7 +4,17 @@ from typing import Dict
 import psycopg2
 
 from create.config import add_dist_sort_keys, add_grant_select_statements
-from errors import TableCreationError
+from credentials import redshift_credentials
+from errors import TableCreationError, RedshiftConnectionError
+
+
+def create_connection():
+    try:
+        connection = psycopg2.connect(**redshift_credentials())
+        connection.autocommit = True
+        return connection
+    except psycopg2.OperationalError:
+        raise RedshiftConnectionError
 
 
 def create_temp_table(table: str, query: str, config: Dict, connection) -> int:

@@ -74,6 +74,6 @@ def main(sql_folder, strict=False, db_path='./duro.db', use_git=False):
 
 if __name__ == '__main__':
     try:
-        main('./views', strict=False, use_git=False)
+        main('./views', strict=False, use_git=True)
     except MaterializationError:
         print('Couldn‘t build a schedule for this views folder.')
