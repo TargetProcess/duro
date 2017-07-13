@@ -35,3 +35,7 @@ def copy_graph_without_attributes(source_graph: nx.DiGraph, attributes: List) ->
             if attribute in graph.node[node]:
                 del graph.node[node][attribute]
     return graph
+
+
+def get_all_successors(graph: nx.DiGraph, node) -> List:
+    return list(nx.dfs_preorder_nodes(graph, node))
