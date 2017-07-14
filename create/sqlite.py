@@ -98,10 +98,3 @@ def get_tables_to_create(db: str) -> List[Tuple]:
             AND deleted IS NULL
                             ''')
         return cursor.fetchall()
-
-
-def propagate_force_flag(table: str, db: str, graph: DiGraph):
-    successors = get_all_successors(graph, table)
-    with sqlite3.connect(db) as connection:
-        connection.execute(f'''UPDATE tables SET force = 1
-                        WHERE table_name in {str(tuple(successors))}''')

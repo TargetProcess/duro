@@ -11,6 +11,7 @@ def get_jobs(floor: int, ceiling: int, db):
                         COALESCE(drop_old, "insert") AS "finish"
                     FROM timestamps
                     WHERE "start" BETWEEN ? AND ?
+                    AND deleted IS NULL
                     
                     UNION ALL
                     
@@ -19,6 +20,7 @@ def get_jobs(floor: int, ceiling: int, db):
                         NULL AS "finish"
                     FROM tables
                     WHERE started IS NOT NULL
+                    AND deleted IS NULL
                     
                     ''', (floor, ceiling)).fetchall()
 
@@ -37,7 +39,18 @@ def get_table_details(db, table: str):
 
 
 def set_table_for_update(db, table: str, force_tree: int):
+    if force_tree:
+        propagate_force_flag(table, )
     db.execute('''UPDATE tables
                 SET force = 1, force_tree = ?
                 WHERE table_name = ? ''', (force_tree, table))
     db.commit()
+
+
+def propagate_force_flag(db: str, table: str,  graph: DiGraph):
+    successors = get_all_successors(graph, table)
+    with sqlite3.connect(db) as connection:
+        connection.execute(f'''UPDATE tables SET force = 1
+                        WHERE table_name in {str(tuple(successors))}''')
+        connection.execute('''UPDATE tables SET force_tree = 0
+                        WHERE table_name = ?''', (table, ))

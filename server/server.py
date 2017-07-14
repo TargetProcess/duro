@@ -111,6 +111,7 @@ def prepare_table_details(details: List) -> Tuple[List, List]:
 @app.route('/update', methods=['POST'])
 def register_update_request():
     table = request.form['table']
+    print('in register', table)
     force_tree_update = request.form.get('tree', 0)
     if is_running(table, DATABASE):
         return jsonify({'message': 'Already running'})

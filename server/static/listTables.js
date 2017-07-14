@@ -96,14 +96,14 @@ var buildTable = function (tablesList) {
             + '<td class="align-middle">' + cur.mean + '</td>';
         var id = cur.table_name.replace('.', '-');
         if (cur.started) {
-            acc += '<td><button class="btn" id="update-' + id + '" disabled>Running...</button></td>'
-                + '<td><button class="btn" id="update-tree-' + id + '" disabled>Running...</button></td></tr>'
+            acc += buildButton(cur.table_name, 'Running...', true)
+                + buildButton(cur.table_name, 'Running...', true) + '</tr>'
         } else if (cur.deleted) {
-            acc += '<td><button class="btn" id="update-' + id + '" disabled>Removed</button></td>'
-                + '<td><button class="btn" id="update-tree-' + id + '" disabled>Removed</button></td></tr>'
+            acc += buildButton(cur.table_name, 'Removed', true)
+                + buildButton(cur.table_name, 'Removed', true) + '</tr>'
         } else {
-            acc += '<td><button class="btn" id="update-' + id + '"> Update table </button></td>'
-                + '<td><button class="btn" id="update-tree-' + id + '">Update subtree</button></td></tr>'
+            acc += buildButton(cur.table_name, 'Update table', false)
+                + buildButton(cur.table_name, 'Update tree', false) + '</tr>'
         }
         return acc;
     }, '');
@@ -111,6 +111,12 @@ var buildTable = function (tablesList) {
     $tables.find('tbody').html(table);
     styleTable($tables);
     addListener();
+};
+
+var buildButton = function (table, label, isDisabled) {
+    var disabled = isDisabled ? 'disabled' : '';
+    return '<td><button class="btn" data-id="' + table + '"' + disabled + '>'
+        + label + '</button></td>';
 };
 
 var styleTable = function ($tables) {
@@ -130,21 +136,22 @@ var styleTable = function ($tables) {
 var addListener = function () {
     $("button").click(function (e) {
         e.preventDefault();
-        var id = this.id;
+        var id = $(this).data('id');
+        var action = $(this).innerText;
         var request = {
             type: 'POST',
             url: '/update',
             success: displayUpdateSuccess,
             error: displayUpdateFailure
         };
-        if (id.substring(0, 11) === 'update-tree') {
+        if (action === 'Update tree') {
             request.data = {
-                table: id.substring(12),
+                table: id,
                 tree: 1
             };
         } else {
             request.data = {
-                table: id.substring(7),
+                table: id,
                 tree: 0
             };
         }

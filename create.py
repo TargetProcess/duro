@@ -18,7 +18,8 @@ from create.sqlite import (load_info, update_last_created, log_timestamps,
 from create.timestamps import Timestamps
 from errors import (TableNotFoundError, MaterializationError)
 from file_utils import load_processor
-from utils import GlobalConfig, Table
+from utils import Table
+from global_config import GlobalConfig, load_global_config
 
 
 tables_to_create_count = 0
@@ -113,21 +114,6 @@ def should_be_created(table: Table, db_path: str, force: bool) -> bool:
         return True
 
 
-def load_global_config() -> GlobalConfig:
-    try:
-        config = configparser.ConfigParser()
-        config.read('config.conf')
-        db_path = config['main'].get('db', './duro.db')
-        views_path = config['main'].get('views', './views')
-        graph_file_path = config['main'].get('graph', 'dependencies.dot')
-        graph = nx.nx_pydot.read_dot(graph_file_path)
-        # noinspection PyArgumentList
-        return GlobalConfig(db_path, views_path, graph)
-    except configparser.NoSectionError:
-        print('No ’main’ section in config.conf')
-        sys.exit(1)
-
-
 def create_tree(root: str, global_config: GlobalConfig,
                 interval: int = None, force_tree: bool = False):
     global tables_to_create_count
@@ -173,9 +159,13 @@ def create(root_table: str, force_tree: bool = False):
 
 
 if __name__ == '__main__':
-    while True:
-        new_tables = get_tables_to_create('./duro.db')
-        print(datetime.now(), len(new_tables), 'new tables')
-        for t, _ in new_tables:
-            create(t)
-        time.sleep(30)
+    # while True:
+    #     new_tables = get_tables_to_create('./duro.db')
+    #     print(datetime.now(), len(new_tables), 'new tables')
+    #     print(new_tables)
+    #     for t, _ in new_tables:
+    #         create(t)
+    #     time.sleep(30)
+    new_tables = get_tables_to_create('./duro.db')
+    print(len(new_tables))
+    print(new_tables)
