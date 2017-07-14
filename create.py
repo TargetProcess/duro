@@ -7,7 +7,7 @@ import time
 import arrow
 import networkx as nx
 
-from create.config import load_config
+from create.config import load_table_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
@@ -43,7 +43,7 @@ def create_table(table: Table, db_path: str, views_path: str,
     ts.log('start')
     # noinspection PyUnresolvedReferences
     # log_start(table.name, db_path, ts.start)
-    config = load_config(table.name, views_path)
+    config = load_table_config(table.name, views_path)
     print(f'Creating {table.name} with interval {table.interval}')
 
     connection = create_connection()

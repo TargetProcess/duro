@@ -1,4 +1,4 @@
-from create.config import load_config
+from create.config import load_table_config
 from create.data_tests import run_tests, load_tests
 from create.process import process_and_upload_data
 from create.redshift import (create_connection, drop_old_table,
@@ -12,7 +12,7 @@ import argparse
 
 
 def create_table(table: Table, views_path: str, verbose=False):
-    config = load_config(table.name, views_path)
+    config = load_table_config(table.name, views_path)
     print(f'Creating {table.name}')
     if verbose:
         print(f'Using views path: {views_path}')

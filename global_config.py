@@ -12,7 +12,6 @@ class GlobalConfig(NamedTuple):
     graph: nx.DiGraph
 
 
-
 def load_global_config() -> GlobalConfig:
     try:
         config = configparser.ConfigParser()

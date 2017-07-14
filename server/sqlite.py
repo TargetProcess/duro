@@ -1,3 +1,9 @@
+from networkx import DiGraph
+
+from global_config import load_global_config
+from graph_utils import get_all_successors
+
+
 def get_all_tables(db):
     return db.execute('''
             SELECT table_name, interval, last_created, mean, started, deleted
@@ -40,17 +46,16 @@ def get_table_details(db, table: str):
 
 def set_table_for_update(db, table: str, force_tree: int):
     if force_tree:
-        propagate_force_flag(table, )
-    db.execute('''UPDATE tables
-                SET force = 1, force_tree = ?
-                WHERE table_name = ? ''', (force_tree, table))
-    db.commit()
+        propagate_force_flag(db, table, load_global_config().graph)
+    else:
+        db.execute('''UPDATE tables
+                    SET force = 1
+                    WHERE table_name = ? ''', (table, ))
+        db.commit()
 
 
-def propagate_force_flag(db: str, table: str,  graph: DiGraph):
+def propagate_force_flag(db, table: str,  graph: DiGraph):
     successors = get_all_successors(graph, table)
-    with sqlite3.connect(db) as connection:
-        connection.execute(f'''UPDATE tables SET force = 1
+    db.execute(f'''UPDATE tables SET force = 1
                         WHERE table_name in {str(tuple(successors))}''')
-        connection.execute('''UPDATE tables SET force_tree = 0
-                        WHERE table_name = ?''', (table, ))
+    db.commit()
