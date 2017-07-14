@@ -42,7 +42,7 @@ def load_processor(processor: str) -> Tuple:
         processor_module = loader.load_module()
         return processor_module.process, processor_module.columns
     except AttributeError:
-        raise ProcessorNotFoundError(f'Could’t load a processor from {processor}.py')
+        raise ProcessorNotFoundError(f'Could’t load a processor from {processor}')
 
 
 def process_data(data: List[Dict], processor: str) -> Tuple[List[Dict], List]:
