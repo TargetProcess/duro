@@ -40,12 +40,8 @@ def create_table(table: Table, views_path: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('table', help='table to create', type=str)
-    parser.add_argument('--views_path', '-v', help='folder containing the views')
+    parser.add_argument('--path', '-p', default='../materialized-views/', help='folder containing the views')
     args = parser.parse_args()
-    path = './views'
-    if args.views_path:
-        path = args.views_path
-    # noinspection PyArgumentList
-    table = Table(args.table, load_query(args.table, path), None, None)
-    create_table(table, path)
+    table = Table(args.table, load_query(args.table, args.path), None, None)
+    create_table(table, args.path)
 
