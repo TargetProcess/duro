@@ -159,13 +159,9 @@ def create(root_table: str, force_tree: bool = False):
 
 
 if __name__ == '__main__':
-    # while True:
-    #     new_tables = get_tables_to_create('./duro.db')
-    #     print(datetime.now(), len(new_tables), 'new tables')
-    #     print(new_tables)
-    #     for t, _ in new_tables:
-    #         create(t)
-    #     time.sleep(30)
-    new_tables = get_tables_to_create('./duro.db')
-    print(len(new_tables))
-    print(new_tables)
+    while True:
+        new_tables = get_tables_to_create('./duro.db')
+        print(datetime.now(), len(new_tables), 'new tables')
+        for t, _ in new_tables:
+            create(t)
+        time.sleep(30)
