@@ -1,23 +1,21 @@
 import sqlite3
 
 from create.timestamps import Timestamps
-from graph_utils import get_all_successors
 from utils import Table
-from networkx import DiGraph
 from typing import List, Tuple
 
 
 def load_info(table: str, db: str) -> Table:
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
-        cursor.execute('''SELECT query, interval, last_created 
+        cursor.execute('''SELECT query, interval, last_created, force
                         FROM tables
                         WHERE table_name = ? ''', (table,))
         # noinspection PyArgumentList
         return Table(table, *cursor.fetchone())
 
 
-def update_last_created(db: str, table: str, timestamp: int, duration: int, forced_tree: bool):
+def update_last_created(db: str, table: str, timestamp: int, duration: int):
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute('''UPDATE tables 
@@ -33,9 +31,6 @@ def update_last_created(db: str, table: str, timestamp: int, duration: int, forc
                             force = NULL
                         WHERE table_name = ? ''',
                        (timestamp, duration, duration, table))
-        if forced_tree:
-            cursor.execute('''UPDATE tables 
-                        SET force_tree = NULL''')
 
 
 def log_timestamps(table: str, db: str, timestamps: Timestamps):
@@ -89,10 +84,9 @@ def get_tables_to_create(db: str) -> List[Tuple]:
     print('Getting tables')
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
-        cursor.execute(f'''SELECT table_name, force_tree 
+        cursor.execute(f'''SELECT table_name 
             FROM tables
-            WHERE ((force = 1 
-            OR force_tree = 1)
+            WHERE (force = 1
             OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
             OR last_created IS NULL)
             AND deleted IS NULL

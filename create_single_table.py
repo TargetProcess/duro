@@ -48,6 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('--path', '-p', default='../materialized-views/', help='folder containing the views')
     parser.add_argument('--verbose', '-v', default=False, help='Verbose', action='store_true')
     args = parser.parse_args()
-    table = Table(args.table, load_query(args.table, args.path), None, None)
+    # noinspection PyArgumentList
+    table = Table(args.table, load_query(args.table, args.path), None, None, None)
     create_table(table, args.path, args.verbose)
 

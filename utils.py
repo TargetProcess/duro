@@ -1,15 +1,12 @@
 from typing import NamedTuple
 
-import networkx as nx
-
 
 class Table(NamedTuple):
     name: str
     query: str
     interval: int
     last_created: int
-
-
+    force: bool
 
 
 class DistSortKeys(NamedTuple):
