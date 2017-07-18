@@ -74,11 +74,12 @@ def main(sql_folder, logger: Logger, strict=False, db_path='./duro.db',
             roots_without_interval)
         raise RootsWithoutIntervalError
 
-    save_to_db(graph, db_path, latest_commit)
+    updated, new = save_to_db(graph, db_path, latest_commit)
+    updates = f'{new} new tables. {updated} updated tables.'
     if use_git:
-        logger.info(f'Rescheduled for commit {latest_commit}')
+        logger.info(f'Rescheduled for commit {latest_commit}. {updates}')
     else:
-        logger.info('Rescheduled')
+        logger.info(f'Rescheduled. {updates}')
 
 
 if __name__ == '__main__':
