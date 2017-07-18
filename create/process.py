@@ -1,6 +1,8 @@
 import csv
 import gzip
 import importlib.machinery
+from logging import Logger
+
 import arrow
 from typing import List, Dict, Tuple
 
@@ -10,25 +12,25 @@ import tinys3
 from create.config import load_dist_sort_keys, add_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
-from file_utils import load_ddl_query
-from utils import Table
+from utils.file_utils import load_ddl_query
+from utils.utils import Table
 from errors import ProcessorNotFoundError, RedshiftUploadError
 
 
 def process_and_upload_data(table: Table, processor: str, connection,
                             config: Dict, ts: Timestamps,
-                            views_path: str) -> int:
-    data = select_data(table.query, connection)
+                            views_path: str, logger: Logger) -> int:
+    data = select_data(table.query, connection, logger)
     ts.log('select')
-    processed_data, columns = process_data(data, processor)
+    processed_data, columns = process_data(data, processor, logger)
     ts.log('process')
     return upload_to_temp_table(processed_data, columns,
                                 table.name, config,
-                                connection, ts, views_path)
+                                connection, ts, views_path, logger)
 
 
-def select_data(query: str, connection) -> List[Dict]:
-    print('Selecting data')
+def select_data(query: str, connection, logger: Logger) -> List[Dict]:
+    logger.info('Selecting data')
     with connection.cursor() as cursor:
         cursor.execute(query)
         columns = [desc[0] for desc in cursor.description]
@@ -45,28 +47,29 @@ def load_processor(processor: str) -> Tuple:
         raise ProcessorNotFoundError(f'Could’t load a processor from {processor}')
 
 
-def process_data(data: List[Dict], processor: str) -> Tuple[List[Dict], List]:
-    print('Loading processor')
+def process_data(data: List[Dict], processor: str, logger: Logger) -> Tuple[List[Dict], List]:
+    logger.info('Loading processor')
     process, columns = load_processor(processor)
-    print('Processing data')
+    logger.info('Processing data')
     return process(data), columns
 
 
 def upload_to_temp_table(data: List[Dict], columns: List,
                          table: str, config: Dict,
-                         connection, ts: Timestamps, views_path: str) -> int:
+                         connection, ts: Timestamps, views_path: str,
+                         logger: Logger) -> int:
     filename = f'{s3_credentials()["folder"]}/{table}-{arrow.now().strftime("%Y-%m-%d-%H-%M")}.csv.gzip'
-    print(f'Saving to CSV')
+    logger.info(f'Saving to CSV')
     save_to_csv(data, columns, filename)
     ts.log('csv')
 
-    print(f'Uploading to S3')
+    logger.info(f'Uploading to S3')
     upload_to_s3(filename)
     ts.log('s3')
 
     drop_and_create_query = build_drop_and_create_query(table, config,
                                                         views_path)
-    print(f'Copying {table} to Redshift')
+    logger.info(f'Copying {table} to Redshift')
     timestamp = copy_to_redshift(filename, table, connection,
                                  drop_and_create_query)
     ts.log('insert')

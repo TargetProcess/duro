@@ -3,6 +3,7 @@ import glob
 import os
 from functools import lru_cache
 from itertools import chain
+from logging import Logger
 from os.path import splitext
 from typing import List, Tuple, NamedTuple, Dict
 
@@ -119,12 +120,10 @@ def find_file_for_table(table: str, path: str, match: callable) -> str:
 
 
 def load_processor(table: str, path: str) -> str:
-    print(f'Loading tests for {table}')
     return find_file_for_table(table, path, lambda s: s.endswith('.py'))
 
 
 def load_ddl_query(table: str, path: str) -> str:
-    print(f'Loading create query for {table}')
     query = read_file(
         find_file_for_table(table, path, lambda s: s.endswith('_ddl.sql')))
     return query.lower().replace(f'create table {table}',

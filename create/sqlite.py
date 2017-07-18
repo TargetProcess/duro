@@ -1,18 +1,22 @@
 import sqlite3
 
 from create.timestamps import Timestamps
-from utils import Table
+from errors import TableNotFoundError
+from utils.utils import Table
 from typing import List, Tuple
 
 
 def load_info(table: str, db: str) -> Table:
     with sqlite3.connect(db) as connection:
-        cursor = connection.cursor()
-        cursor.execute('''SELECT query, interval, last_created, force
-                        FROM tables
-                        WHERE table_name = ? ''', (table,))
-        # noinspection PyArgumentList
-        return Table(table, *cursor.fetchone())
+        try:
+            cursor = connection.cursor()
+            cursor.execute('''SELECT query, interval, last_created, force
+                            FROM tables
+                            WHERE table_name = ? ''', (table,))
+            # noinspection PyArgumentList
+            return Table(table, *cursor.fetchone())
+        except TypeError:
+            raise TableNotFoundError
 
 
 def update_last_created(db: str, table: str, timestamp: int, duration: int):
@@ -81,7 +85,6 @@ def build_query_to_create_timestamps_table():
 
 
 def get_tables_to_create(db: str) -> List[Tuple]:
-    print('Getting tables')
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute(f'''SELECT table_name 
@@ -90,5 +93,6 @@ def get_tables_to_create(db: str) -> List[Tuple]:
             OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
             OR last_created IS NULL)
             AND deleted IS NULL
+            AND table_name like '%tauspy%'
                             ''')
         return cursor.fetchall()

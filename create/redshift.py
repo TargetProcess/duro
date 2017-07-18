@@ -1,5 +1,6 @@
 import arrow
 from typing import Dict
+from logging import Logger
 
 import psycopg2
 
@@ -17,8 +18,8 @@ def create_connection():
         raise RedshiftConnectionError
 
 
-def create_temp_table(table: str, query: str, config: Dict, connection) -> int:
-    print(f'Creating temp table for {table}')
+def create_temp_table(table: str, query: str, config: Dict, connection, logger: Logger) -> int:
+    logger.info(f'Creating temp table for {table}')
 
     create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)
     create_query = add_grant_select_statements(table, create_query, config)
@@ -37,13 +38,13 @@ def create_temp_table(table: str, query: str, config: Dict, connection) -> int:
     return arrow.now().timestamp
 
 
-def drop_temp_table(table: str, connection):
-    print(f'Dropping temp table for {table}')
+def drop_temp_table(table: str, connection, logger: Logger):
+    logger.info(f'Dropping temp table for {table}')
     drop_table(f'{table}_temp', connection)
 
 
-def drop_old_table(table: str, connection):
-    print(f'Dropping old table for {table}')
+def drop_old_table(table: str, connection, logger: Logger):
+    logger.info(f'Dropping old table for {table}')
     drop_table(f'{table}_old', connection)
 
 
@@ -53,8 +54,8 @@ def drop_table(table: str, connection):
         cursor.execute(query_drop)
 
 
-def replace_old_table(table: str, connection):
-    print(f'Replacing old table for {table}')
+def replace_old_table(table: str, connection, logger: Logger):
+    logger.info(f'Replacing old table for {table}')
     short_table_name = table.split('.')[-1]
 
     drop_view(table, connection)

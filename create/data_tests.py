@@ -1,10 +1,11 @@
 import os
+from logging import Logger
 
-from file_utils import read_file
+from utils.file_utils import read_file
 
 
-def load_tests(table: str, path: str) -> str:
-    print(f'Loading tests for {table}')
+def load_tests(table: str, path: str, logger: Logger) -> str:
+    logger.info(f'Loading tests for {table}')
     folder, file = table.split('.')
     tests_file = os.path.join(path, folder, f'{file}_test.sql')
     if os.path.isfile(tests_file):
@@ -13,15 +14,15 @@ def load_tests(table: str, path: str) -> str:
         tests_file = os.path.join(path, f'{table}_test.sql')
         if os.path.isfile(tests_file):
             return read_file(tests_file).replace(f'{table}', f'{table}_temp')
-    print(f'No tests for {table}')
+    logger.info(f'No tests for {table}')
     return ''
 
 
-def run_tests(tests_queries: str, connection) -> bool:
+def run_tests(tests_queries: str, connection, logger: Logger) -> bool:
     if len(tests_queries) == 0:
         return True
 
-    print(f'Running tests')
+    logger.info(f'Running tests')
     with connection.cursor() as cursor:
         queries = (q for q in tests_queries.split(';') if len(q) > 0)
         results = []
@@ -33,6 +34,6 @@ def run_tests(tests_queries: str, connection) -> bool:
         passed = all((result[1] for result in results))
         if not passed:
             failed_columns = [result[0] for result in results if not result[1]]
-            print(f'Failed tests: {failed_columns}')
+            logger.info(f'Failed tests: {failed_columns}')
 
         return passed

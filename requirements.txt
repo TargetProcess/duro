@@ -11,3 +11,4 @@ flask==0.12.2
 arrow==0.10
 raven==6.1.0
 referer-parser==0.4.1
+logzero==1.2.1

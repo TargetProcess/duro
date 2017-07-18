@@ -1,4 +1,4 @@
-from file_utils import parse_filename, convert_interval_to_integer
+from utils.file_utils import parse_filename, convert_interval_to_integer
 import pytest
 
 

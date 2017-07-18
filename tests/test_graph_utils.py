@@ -1,9 +1,11 @@
 import networkx as nx
 
-from graph_utils import (find_sources, find_sources_without_attribute,
-                         copy_graph_without_attributes, get_all_successors)
+from utils.graph_utils import (find_sources, find_sources_without_attribute,
+                               copy_graph_without_attributes,
+                               get_all_successors)
 
-no_sources = nx.DiGraph([[1, 2], [3, 4], [3, 1], [4, 2], [2, 3]], name='no sources')
+no_sources = nx.DiGraph([[1, 2], [3, 4], [3, 1], [4, 2], [2, 3]],
+                        name='no sources')
 
 no_edges = nx.DiGraph(name='no edges')
 no_edges.add_nodes_from([1, 2, 3, 4])
@@ -15,7 +17,8 @@ two_trees = nx.DiGraph([[1, 2], [1, 3], [1, 4], [6, 7], [6, 8]])
 two_trees_and_a_cycle = nx.DiGraph([[1, 2], [1, 3], [1, 4], [1, 5], [6, 7],
                                     [6, 8], [9, 10], [10, 11], [11, 9]])
 
-two_trees_and_a_node = nx.DiGraph([[1, 2], [1, 3], [1, 4], [1, 5], [6, 7], [6, 8]])
+two_trees_and_a_node = nx.DiGraph(
+    [[1, 2], [1, 3], [1, 4], [1, 5], [6, 7], [6, 8]])
 two_trees_and_a_node.add_node(9)
 
 graph_one = nx.DiGraph([[0, 6], [1, 3], [1, 5], [1, 6], [3, 4], [3, 5], [3, 7],
@@ -27,9 +30,11 @@ growing_network = nx.DiGraph(
      (0, 14), (5, 15), (1, 16), (15, 17), (9, 18), (1, 19)])
 
 scale_free = nx.DiGraph(
-    [(1, 0), (2, 1), (9, 1), (0, 2), (1, 2), (0, 3), (0, 3), (5, 3), (8, 3), (6, 3),
+    [(1, 0), (2, 1), (9, 1), (0, 2), (1, 2), (0, 3), (0, 3), (5, 3), (8, 3),
+     (6, 3),
      (1, 4), (0, 5), (5, 6), (0, 7),
-     (0, 7), (1, 8), (0, 8), (1, 10), (2, 10), (0, 11), (0, 12), (0, 13), (4, 14)]
+     (0, 7), (1, 8), (0, 8), (1, 10), (2, 10), (0, 11), (0, 12), (0, 13),
+     (4, 14)]
 )
 
 graph = two_trees
@@ -56,13 +61,17 @@ def test_find_sources():
 def test_find_sources_without_attribute():
     two_trees_and_a_cycle_copy = two_trees_and_a_cycle.copy()
     two_trees_and_a_cycle_copy.node[1]['attr'] = 'value'
-    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy,
+                                          'attr') == [6]
     two_trees_and_a_cycle_copy.node[2]['attr'] = 'value'
-    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy,
+                                          'attr') == [6]
     two_trees_and_a_cycle_copy.node[6]['another_attr'] = 'value'
-    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == [6]
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy,
+                                          'attr') == [6]
     two_trees_and_a_cycle_copy.node[6]['attr'] = 'value'
-    assert find_sources_without_attribute(two_trees_and_a_cycle_copy, 'attr') == []
+    assert find_sources_without_attribute(two_trees_and_a_cycle_copy,
+                                          'attr') == []
 
     simple_tree_copy = simple_tree.copy()
     assert find_sources_without_attribute(simple_tree_copy, 'attr') == [1]
@@ -72,9 +81,10 @@ def test_find_sources_without_attribute():
 
 def test_copy_graph_without_attributes():
     graph = nx.DiGraph()
-    graph.add_nodes_from([(1, {'a': 42, 'b': 44}), (2, {'a': 43}), (3, ), (4, )])
+    graph.add_nodes_from([(1, {'a': 42, 'b': 44}), (2, {'a': 43}), (3,), (4,)])
 
-    no_attributes = copy_graph_without_attributes(graph, ['a', 'b', 'c']).nodes(data=True)
+    no_attributes = copy_graph_without_attributes(graph, ['a', 'b', 'c']).nodes(
+        data=True)
     for node in no_attributes:
         assert node[1].get('a') is None
         assert node[1].get('b') is None
@@ -85,7 +95,8 @@ def test_copy_graph_without_attributes():
     nx.set_node_attributes(graph, 'a', {1: 42, 2: 43})
     nx.set_node_attributes(graph, 'b', {1: 44})
 
-    no_a_attribute = copy_graph_without_attributes(graph, ['a']).nodes(data=True)
+    no_a_attribute = copy_graph_without_attributes(graph, ['a']).nodes(
+        data=True)
     for node in no_attributes:
         assert node[1].get('a') is None
     assert no_a_attribute[0][1].get('b') == 44
@@ -93,11 +104,13 @@ def test_copy_graph_without_attributes():
 
 def test_get_all_successor():
     two_level_tree = nx.DiGraph([[1, 2], [1, 3], [1, 4], [2, 5], [2, 6]])
-    three_level_tree = nx.DiGraph([[1, 2], [1, 3], [1, 4], [2, 5], [2, 6], [3, 7], [5, 8]])
+    three_level_tree = nx.DiGraph(
+        [[1, 2], [1, 3], [1, 4], [2, 5], [2, 6], [3, 7], [5, 8]])
 
     assert get_all_successors(simple_tree, 1) == [1, 2, 3, 4, 5]
     assert sorted(get_all_successors(two_level_tree, 1)) == [1, 2, 3, 4, 5, 6]
-    assert sorted(get_all_successors(three_level_tree, 1)) == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert sorted(get_all_successors(three_level_tree, 1)) == [1, 2, 3, 4, 5, 6,
+                                                               7, 8]
     assert sorted(get_all_successors(three_level_tree, 2)) == [2, 5, 6, 8]
     assert sorted(get_all_successors(graph_one, 1)) == [1, 3, 4, 5, 6, 7, 8, 9]
     assert sorted(get_all_successors(graph_one, 5)) == [5, 7, 8, 9]

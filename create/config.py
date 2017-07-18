@@ -1,8 +1,8 @@
 from typing import Dict
 import os
 
-from file_utils import read_config
-from utils import DistSortKeys
+from utils.file_utils import read_config
+from utils.utils import DistSortKeys
 
 
 def load_dist_sort_keys(table: str, config: Dict) -> DistSortKeys:

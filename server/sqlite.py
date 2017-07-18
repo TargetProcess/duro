@@ -1,7 +1,7 @@
 from networkx import DiGraph
 
-from global_config import load_global_config
-from graph_utils import get_all_successors
+from utils.global_config import load_global_config
+from utils.graph_utils import get_all_successors
 
 
 def get_all_tables(db):
