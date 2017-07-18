@@ -1,6 +1,6 @@
-from create.table_config import load_table_config
 from create.data_tests import run_tests, load_tests
 from create.process import process_and_upload_data
+from schedule.table_config import parse_table_config
 from create.redshift import (create_connection, drop_old_table,
                              replace_old_table, drop_temp_table,
                              create_temp_table)
@@ -13,7 +13,6 @@ import argparse
 
 
 def create_table(table: Table, views_path: str, verbose=False):
-    config = load_table_config(table.name, views_path)
     logger = setup_logger(table.name, stdout=True)
     logger.info(f'Creating {table.name}')
     if verbose:
@@ -27,11 +26,11 @@ def create_table(table: Table, views_path: str, verbose=False):
         logger.info(f'Loaded processor: {processor}')
     if processor:
         process_and_upload_data(table, processor,
-                                connection, config,
+                                connection,
                                 Timestamps(),
                                 views_path, logger)
     else:
-        create_temp_table(table.name, table.query, config,
+        create_temp_table(table.name, table.query, table.config,
                           connection, logger)
 
     tests_queries = load_tests(table.name, views_path, logger)
@@ -51,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', '-v', default=False, help='Verbose', action='store_true')
     args = parser.parse_args()
     # noinspection PyArgumentList
-    table = Table(args.table, load_query(args.table, args.path), None, None, None)
+    table = Table(args.table, load_query(args.table, args.path), None,
+                  parse_table_config(args.table, args.path), None, None)
     create_table(table, args.path, args.verbose)
 

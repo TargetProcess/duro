@@ -4,7 +4,7 @@ from logging import Logger
 
 import psycopg2
 
-from create.table_config import add_dist_sort_keys, add_grant_select_statements
+from create.table_config import add_dist_sort_keys, load_grant_select_statements
 from credentials import redshift_credentials
 from errors import TableCreationError, RedshiftConnectionError
 
@@ -22,9 +22,10 @@ def create_temp_table(table: str, query: str, config: Dict, connection, logger: 
     logger.info(f'Creating temp table for {table}')
 
     create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)
-    create_query = add_grant_select_statements(table, create_query, config)
+    grant_select = load_grant_select_statements(table, config)
     full_query = f'''DROP TABLE IF EXISTS {table}_temp;
-                {create_query}
+                {create_query};
+                {grant_select};
                 '''
 
     if config.get('users'):

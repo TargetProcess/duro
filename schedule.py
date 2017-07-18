@@ -40,19 +40,19 @@ def draw_subgraphs(graph: nx.DiGraph):
         counter += 1
 
 
-def main(sql_folder, logger: Logger, strict=False, db_path='./duro.db',
+def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
          use_git=False):
     latest_commit = None
     if use_git:
-        commits = get_all_commits(sql_folder)
+        commits = get_all_commits(sql_path)
         views = get_updated_views(commits, db_path)
         latest_commit = commits[0] if len(commits) > 0 else None
         if len(views) == 0:
             logger.info('No new commits')
             return
 
-    graph = build_graph(sql_folder)
-    logger.info(f'Built graph for {sql_folder}')
+    graph = build_graph(sql_path)
+    logger.info(f'Built graph for {sql_path}')
     is_dag, cycles = detect_cycles(graph, strict)
     nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
     nx.nx_pydot.write_dot(
@@ -74,7 +74,7 @@ def main(sql_folder, logger: Logger, strict=False, db_path='./duro.db',
             roots_without_interval)
         raise RootsWithoutIntervalError
 
-    updated, new = save_to_db(graph, db_path, latest_commit)
+    updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
     updates = f'{new} new tables. {updated} updated tables.'
     if use_git:
         logger.info(f'Rescheduled for commit {latest_commit}. {updates}')

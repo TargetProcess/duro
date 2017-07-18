@@ -3,7 +3,6 @@ import glob
 import os
 from functools import lru_cache
 from itertools import chain
-from logging import Logger
 from os.path import splitext
 from typing import List, Tuple, NamedTuple, Dict
 

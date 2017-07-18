@@ -50,11 +50,11 @@ def set_table_for_update(db, table: str, force_tree: int):
     else:
         db.execute('''UPDATE tables
                     SET force = 1
-                    WHERE table_name = ? ''', (table, ))
+                    WHERE table_name = ? ''', (table,))
         db.commit()
 
 
-def propagate_force_flag(db, table: str,  graph: DiGraph):
+def propagate_force_flag(db, table: str, graph: DiGraph):
     successors = get_all_successors(graph, table)
     db.execute(f'''UPDATE tables SET force = 1
                         WHERE table_name in {str(tuple(successors))}''')

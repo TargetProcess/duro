@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 from create.timestamps import Timestamps
@@ -10,11 +11,12 @@ def load_info(table: str, db: str) -> Table:
     with sqlite3.connect(db) as connection:
         try:
             cursor = connection.cursor()
-            cursor.execute('''SELECT query, interval, last_created, force
+            cursor.execute('''SELECT query, interval, config, last_created, force
                             FROM tables
                             WHERE table_name = ? ''', (table,))
+            row = cursor.fetchone()
             # noinspection PyArgumentList
-            return Table(table, *cursor.fetchone())
+            return Table(table, row[0], row[1], json.loads(row[2]), row[3], row[4])
         except TypeError:
             raise TableNotFoundError
 

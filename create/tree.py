@@ -22,7 +22,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     if table.interval is None and interval is not None:
         tree_logger.info(f'Updating interval for {root}')
         # noinspection PyArgumentList
-        table = Table(table.name, table.query, interval,
+        table = Table(table.name, table.query, interval, table.config,
                       table.last_created, table.force)
 
     if not should_be_created(table, global_config.db_path, tree_logger,
@@ -34,7 +34,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     remaining_tables += len(children)
     tree_logger.info(f'Tables remaining: {remaining_tables}')
 
-    handle_cycles(global_config, table)
+    handle_cycles(global_config, table, remaining_tables)
 
     for child in children:
         create_tree(child, global_config, table.interval, remaining_tables)
@@ -82,9 +82,9 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
         return True
 
 
-def handle_cycles(global_config: GlobalConfig, table: Table):
+def handle_cycles(global_config: GlobalConfig, table: Table, remaining_tables: int):
     if table.name == 'satisfaction.companies':
-        create_table(table, global_config.db_path, global_config.views_path)
+        create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
 
 
 def wait_till_finished(table: str, db: str, logger: Logger):

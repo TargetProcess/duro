@@ -1,4 +1,4 @@
-from create.table_config import parse_permissions
+from schedule.table_config import parse_permissions
 
 
 def test_parse_permissions():

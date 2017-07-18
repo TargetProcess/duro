@@ -1,4 +1,3 @@
-from create.table_config import load_table_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
@@ -18,7 +17,6 @@ def create_table(table: Table, db_path: str, views_path: str,
     ts.log('start')
     # noinspection PyUnresolvedReferences
     log_start(table.name, db_path, ts.start)
-    config = load_table_config(table.name, views_path)
     logger.info(f'Creating {table.name} with interval {table.interval}')
 
     connection = create_connection()
@@ -27,10 +25,11 @@ def create_table(table: Table, db_path: str, views_path: str,
     processor = load_processor(table.name, views_path)
     if processor:
         creation_timestamp = process_and_upload_data(table, processor,
-                                                     connection, config, ts,
+                                                     connection, ts,
                                                      views_path, logger)
     else:
-        creation_timestamp = create_temp_table(table.name, table.query, config,
+        creation_timestamp = create_temp_table(table.name, table.query,
+                                               table.config,
                                                connection, logger)
         ts.log('create_temp')
 

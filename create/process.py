@@ -9,7 +9,8 @@ from typing import List, Dict, Tuple
 import psycopg2
 import tinys3
 
-from create.table_config import load_dist_sort_keys, add_grant_select_statements
+from create.table_config import (load_dist_sort_keys,
+                                 load_grant_select_statements)
 from create.timestamps import Timestamps
 from credentials import s3_credentials
 from utils.file_utils import load_ddl_query
@@ -17,15 +18,14 @@ from utils.utils import Table
 from errors import ProcessorNotFoundError, RedshiftUploadError
 
 
-def process_and_upload_data(table: Table, processor: str, connection,
-                            config: Dict, ts: Timestamps,
+def process_and_upload_data(table: Table, processor: str, connection, ts: Timestamps,
                             views_path: str, logger: Logger) -> int:
     data = select_data(table.query, connection, logger)
     ts.log('select')
     processed_data, columns = process_data(data, processor, logger)
     ts.log('process')
     return upload_to_temp_table(processed_data, columns,
-                                table.name, config,
+                                table.name, table.config,
                                 connection, ts, views_path, logger)
 
 
@@ -94,7 +94,7 @@ def upload_to_s3(filename: str):
 
 
 def build_drop_and_create_query(table: str, config: Dict, views_path: str):
-    keys = load_dist_sort_keys(table, config)
+    keys = load_dist_sort_keys(config)
     create_query = load_ddl_query(table, views_path).rstrip(';\n')
     if 'diststyle' not in create_query:
         create_query += f'{keys.diststyle}\n'
@@ -103,8 +103,8 @@ def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     if 'sortkey' not in create_query:
         create_query += f'{keys.sortkey}\n'
 
-    create_query = add_grant_select_statements(table, create_query, config)
-    return f'DROP TABLE IF EXISTS {table}_temp; {create_query}'
+    grant_select = load_grant_select_statements(table, config)
+    return f'DROP TABLE IF EXISTS {table}_temp; {create_query}; {grant_select}'
 
 
 def copy_to_redshift(filename: str, table: str, connection,

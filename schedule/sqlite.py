@@ -1,17 +1,23 @@
+import json
 import sqlite3
 from typing import List, Tuple
 
 import arrow
 import networkx as nx
 
+from schedule.table_config import parse_table_config
 
-def save_to_db(graph: nx.DiGraph, db_path: str, commit: str) -> Tuple:
+
+def save_to_db(graph: nx.DiGraph, db_path: str, sql_path: str,
+               commit: str) -> Tuple:
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
 
     nodes = dict(graph.nodes(data=True))
-    tables_and_queries = [(k, v['contents'], v['interval']) for k, v in
-                          nodes.items()]
+    tables_and_queries = [(table, data['contents'],
+                           data['interval'],
+                           json.dumps(parse_table_config(table, sql_path)))
+                          for table, data in nodes.items()]
     updates = save_tables(tables_and_queries, cursor)
     save_commit(commit, cursor)
     mark_deleted_tables(tables_and_queries, cursor)
@@ -26,11 +32,12 @@ def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple:
         updated_tables = 0
         new_tables = 0
 
-        for table, query, interval in tables_and_queries:
+        for table, query, interval, config in tables_and_queries:
             if is_already_in_db(table, cursor):
-                updated_tables += update_table(table, query, interval, cursor)
+                updated_tables += update_table(table, query, interval, config,
+                                               cursor)
             else:
-                insert_table(table, query, interval, cursor)
+                insert_table(table, query, interval, config, cursor)
                 new_tables += 1
 
         return updated_tables, new_tables
@@ -50,33 +57,37 @@ def is_already_in_db(table: str, cursor) -> bool:
                     ''', (table,)).fetchone()) > 0
 
 
-def insert_table(table: str, query: str, interval: int, cursor):
+def insert_table(table: str, query: str, interval: int, config: str, cursor):
     cursor.execute('''INSERT INTO tables 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                    (table, query,
-                    interval, None,
-                    0, 0,
-                    1,
-                    0, None))
+                    interval, config,
+                    None, 0, 0,
+                    1, 0, None))
 
 
-def update_table(table: str, query: str, interval: int, cursor) -> int:
+def update_table(table: str, query: str, interval: int, config: str,
+                 cursor) -> int:
     cursor.execute('''UPDATE tables 
-                    SET query = ?, interval = ?, force = 1
+                    SET query = ?, 
+                        interval = ?, 
+                        config = ?, 
+                        force = 1
                     WHERE table_name = ? 
-                    AND (query != ?
-                    OR interval != ?)''',
-                   (query, interval, table, query, interval))
+                        AND (query != ? OR query IS NULL
+                            OR interval != ? OR interval IS NULL
+                            OR config != ? OR config IS NULL
+                        )''',
+                   (query, interval, config, table, query, interval, config))
     return cursor.rowcount
 
 
 def create_tables_table(cursor):
     cursor.execute('''CREATE TABLE IF NOT EXISTS tables
                     (table_name text, query text, 
-                    interval integer, last_created integer,
-                    mean real, times_run integer,
-                    force integer, 
-                    started integer, deleted integer);''')
+                    interval integer, config text, 
+                    last_created integer, mean real, times_run integer,
+                    force integer, started integer, deleted integer);''')
 
 
 def save_commit(commit: str, cursor):
@@ -94,7 +105,7 @@ def save_commit(commit: str, cursor):
 
 
 def mark_deleted_tables(tables_and_queries: List[Tuple], cursor):
-    tables = tuple(table for table, _, _ in tables_and_queries)
+    tables = tuple(table for table, _, _, _ in tables_and_queries)
     cursor.execute(f'''UPDATE tables
                     SET deleted = strftime('%s', 'now')
                     WHERE table_name NOT IN {str(tables)}

@@ -12,4 +12,4 @@ def setup_logger(name: str, stdout: bool = False) -> Logger:
     else:
         logfile = f'{load_global_config().logs_path}/{name}.log'
         return logzero.setup_logger(name=name, logfile=logfile,
-                            level=logging.INFO, maxBytes=1_000_000)
+                                    level=logging.INFO, maxBytes=1_000_000)
