@@ -4,7 +4,7 @@ from logging import Logger
 
 import psycopg2
 
-from create.config import add_dist_sort_keys, add_grant_select_statements
+from create.table_config import add_dist_sort_keys, add_grant_select_statements
 from credentials import redshift_credentials
 from errors import TableCreationError, RedshiftConnectionError
 

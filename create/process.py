@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple
 import psycopg2
 import tinys3
 
-from create.config import load_dist_sort_keys, add_grant_select_statements
+from create.table_config import load_dist_sort_keys, add_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
 from utils.file_utils import load_ddl_query

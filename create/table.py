@@ -1,4 +1,4 @@
-from create.config import load_table_config
+from create.table_config import load_table_config
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
