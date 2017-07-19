@@ -95,6 +95,5 @@ def get_tables_to_create(db: str) -> List[Tuple]:
             OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
             OR last_created IS NULL)
             AND deleted IS NULL
-            AND table_name like '%tauspy%'
                             ''')
         return cursor.fetchall()
