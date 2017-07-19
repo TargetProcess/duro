@@ -16,4 +16,4 @@ if __name__ == '__main__':
         print(datetime.now(), len(new_tables), 'new tables')
         for t in new_tables:
             create(t[0])
-            time.sleep(30)
+        time.sleep(30)
