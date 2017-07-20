@@ -86,7 +86,7 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
 
 
 def handle_cycles(global_config: GlobalConfig, table: Table, remaining_tables: int):
-    if table.name == 'satisfaction.companies':
+    if table.name in ('satisfaction.companies', 'sales.churn_money'):
         create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
 
 
