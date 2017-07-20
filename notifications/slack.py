@@ -15,11 +15,7 @@ def send_slack_notification(message: str, title: str = None,
 
     slack = slackweb.Slack(slack_config.url)
     channel = slack_config.success_channel if success else slack_config.failure_channel
+    emoji = ':white_check_mark:' if success else ':scream_cat:'
     username = title if title is not None else 'Duro notification'
-    slack.notify(text=message, channel=channel, username=username)
-    # if title is not None:
-        # attachments = [{'title': title, 'text': message,
-        #                 'mrkdwn_in': ['text', 'pretext']}]
-        # slack.notify(attachments=attachments, channel=channel)
-    # else:
-
+    slack.notify(text=message, channel=channel,
+                 username=username, icon_emoji=emoji)

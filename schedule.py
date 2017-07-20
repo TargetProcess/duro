@@ -6,7 +6,8 @@ from typing import List
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
-                    MaterializationError)
+                    SchedulerError)
+from notifications.slack import send_slack_notification
 from schedule.commits import get_previous_commit, get_all_commits
 from schedule.sqlite import save_to_db
 from utils.file_utils import list_view_files
@@ -75,16 +76,19 @@ def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
         raise RootsWithoutIntervalError
 
     updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
-    updates = f'{new} new tables. {updated} updated tables.'
+    updates = f'New tables: {new}. Updated tables: {updated}.'
     if use_git:
-        logger.info(f'Rescheduled for commit {latest_commit}. {updates}')
+        message = f'Rescheduled for commit {latest_commit}. {updates}'
     else:
-        logger.info(f'Rescheduled. {updates}')
+        message = f'Rescheduled. {updates}'
+    logger.info(message)
+    send_slack_notification(updates, 'Rescheduled views', success=True)
 
 
 if __name__ == '__main__':
     logger = setup_logger('scheduler')
     try:
-        main('./views', logger, strict=False, use_git=False)
-    except MaterializationError:
+        main('./views', logger, strict=True, use_git=False)
+    except SchedulerError as e:
+        send_slack_notification(str(e), 'Scheduler error')
         logger.error('Couldn‘t build a schedule for this views folder')
