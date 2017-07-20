@@ -27,10 +27,6 @@ def create_temp_table(table: str, query: str, config: Dict, connection, logger: 
                 {create_query};
                 {grant_select};
                 '''
-
-    if config.get('users'):
-        full_query += f'GRANT SELECT ON {table}_temp TO {config["users"]}'
-
     try:
         with connection.cursor() as cursor:
             cursor.execute(full_query)

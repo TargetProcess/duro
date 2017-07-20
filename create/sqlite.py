@@ -78,6 +78,28 @@ def is_running(table: str, db: str) -> bool:
         return result[0] if result else False
 
 
+def get_time_running(table: str, db: str) -> int:
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute(f'''SELECT strftime('%s', 'now') - started 
+                    FROM tables
+                    WHERE table_name = ?''',
+                       (table,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+
+def get_average_completion_time(table: str, db: str) -> int:
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute(f'''SELECT mean 
+                    FROM tables
+                    WHERE table_name = ?''',
+                       (table,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+
 def build_query_to_create_timestamps_table():
     events = [f'"{event}" int' for event in Timestamps.__slots__]
     return f'''CREATE TABLE IF NOT EXISTS timestamps 
