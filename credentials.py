@@ -12,10 +12,5 @@ def redshift_credentials() -> Dict:
 
 
 @lru_cache()
-def slack_credentials() -> Dict:
-    return dict(config['slack'])
-
-
-@lru_cache()
 def s3_credentials() -> Dict:
     return dict(config['s3'])

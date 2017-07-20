@@ -1,6 +1,8 @@
 import time
 from logging import Logger
 from typing import List
+
+from notifications.slack import send_slack_notification
 from utils.logger import setup_logger
 
 import arrow
@@ -43,6 +45,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     except MaterializationError as e:
         tree_logger.error(e)
         reset_start(table.name, global_config.db_path)
+        send_slack_notification(str(e))
 
 
 def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:

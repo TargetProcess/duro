@@ -3,11 +3,15 @@ from datetime import datetime
 
 from create.sqlite import get_tables_to_create
 from create.tree import create_tree
+from notifications.slack import send_slack_notification
 from utils.global_config import load_global_config
 
 
 def create(root_table: str):
-    create_tree(root_table, load_global_config())
+    try:
+        create_tree(root_table, load_global_config())
+    except Exception as e:
+        send_slack_notification(str(e))
 
 
 if __name__ == '__main__':

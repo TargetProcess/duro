@@ -1,5 +1,9 @@
 class MaterializationError(Exception):
     """Basic exception for materialization"""
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = 'Materialization error'
+        super().__init__(msg)
 
 
 class MaterializationGraphError(MaterializationError):
@@ -24,6 +28,8 @@ class TestsFailedError(MaterializationError):
 
 class TableNotFoundError(MaterializationError):
     """No table with this name found in config db"""
+    def __init__(self, msg=None):
+        super().__init__(msg)
 
 
 class TableCreationError(MaterializationError):
