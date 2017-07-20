@@ -6,7 +6,8 @@ from utils.logger import setup_logger
 import arrow
 import networkx as nx
 
-from create.sqlite import (load_info, is_running, reset_start)
+from create.sqlite import (load_info, is_running, reset_start,
+                           get_average_completion_time, get_time_running)
 from create.table import create_table
 from errors import (TableNotFoundError, MaterializationError)
 from utils.global_config import GlobalConfig
@@ -60,10 +61,11 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
                       remaining_tables: int) -> bool:
     if is_running(table.name, db_path):
         logger.info('Already running, waiting till done')
-        wait_till_finished(table.name, db_path, logger)
-        remaining_tables -= 1
-        logger.info(f'Tables remaining: {remaining_tables}')
-        return False
+        finished = wait_till_finished(table.name, db_path, logger)
+        if finished:
+            remaining_tables -= 1
+            logger.info(f'Tables remaining: {remaining_tables}')
+            return False
 
     if table.force:
         return True
@@ -88,8 +90,18 @@ def handle_cycles(global_config: GlobalConfig, table: Table, remaining_tables: i
         create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
 
 
-def wait_till_finished(table: str, db: str, logger: Logger):
+def wait_till_finished(table: str, db: str, logger: Logger) -> bool:
     timeout = 10
-    while is_running(table, db):
-        logger.info(f'Waiting for {timeout} seconds')
+    average_time = get_average_completion_time(table, db)
+    logger.info(f'Average completion time: {average_time}')
+    while True:
         time.sleep(timeout)
+        time_running = get_time_running(table, db)
+        if time_running is None:
+            logger.info('Waited until completion')
+            return True
+        if time_running > average_time * 5:
+            logger.info('Can’t be running for so long, resetting')
+            reset_start(table, db)
+            return False
+        logger.info(f'Runs for {time_running} seconds')
