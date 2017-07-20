@@ -66,7 +66,7 @@ def is_processor_ddl(filename: str) -> bool:
 @lru_cache()
 def read_file(filename: str) -> str:
     with open(filename) as file:
-        return " ".join(line.strip() for line in file)
+        return "\n".join(line.strip() for line in file)
 
 
 @lru_cache()

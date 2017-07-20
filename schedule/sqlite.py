@@ -51,10 +51,10 @@ def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple:
 
 
 def is_already_in_db(table: str, cursor) -> bool:
-    return len(cursor.execute('''SELECT table_name
+    return cursor.execute('''SELECT table_name
                     FROM tables
                     WHERE table_name = ?
-                    ''', (table,)).fetchone()) > 0
+                    ''', (table,)).fetchone() is not None
 
 
 def insert_table(table: str, query: str, interval: int, config: str, cursor):

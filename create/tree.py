@@ -39,6 +39,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     for child in children:
         create_tree(child, global_config, table.interval, remaining_tables)
     try:
+        tree_logger.info(f'Creating {table.name}')
         create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
     except MaterializationError as e:
         tree_logger.error(e)
