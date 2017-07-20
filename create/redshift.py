@@ -31,7 +31,7 @@ def create_temp_table(table: str, query: str, config: Dict, connection, logger: 
         with connection.cursor() as cursor:
             cursor.execute(full_query)
     except psycopg2.ProgrammingError as e:
-        raise TableCreationError(str(e))
+        raise TableCreationError(table, str(e))
     return arrow.now().timestamp
 
 

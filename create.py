@@ -3,6 +3,7 @@ from datetime import datetime
 
 from create.sqlite import get_tables_to_create
 from create.tree import create_tree
+from errors import CreationError
 from notifications.slack import send_slack_notification
 from utils.global_config import load_global_config
 
@@ -10,6 +11,8 @@ from utils.global_config import load_global_config
 def create(root_table: str):
     try:
         create_tree(root_table, load_global_config())
+    except CreationError as e:
+        send_slack_notification(e.message, f'Error while creating {e.table}')
     except Exception as e:
         send_slack_notification(str(e))
 

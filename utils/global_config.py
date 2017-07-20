@@ -16,7 +16,8 @@ class GlobalConfig(NamedTuple):
 
 class SlackConfig(NamedTuple):
     url: str
-    channel: str
+    success_channel: str
+    failure_channel: str
 
 
 def load_global_config() -> GlobalConfig:
@@ -42,7 +43,10 @@ def load_slack_config() -> Union[SlackConfig, None]:
         config.read('config.conf')
         url = config['slack']['url']
         channel = config['slack'].get('channel')
-        return SlackConfig(url, channel)
+        success_channel = config['slack'].get('success_channel', channel)
+        failure_channel = config['slack'].get('failure_channel', channel)
+        # noinspection PyArgumentList
+        return SlackConfig(url, success_channel, failure_channel)
     except configparser.Error as e:
         print(e)
         return None

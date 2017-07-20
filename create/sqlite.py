@@ -2,7 +2,7 @@ import json
 import sqlite3
 
 from create.timestamps import Timestamps
-from errors import TableNotFoundError
+from errors import TableNotFoundInDBError
 from utils.utils import Table
 from typing import List, Tuple
 
@@ -18,7 +18,7 @@ def load_info(table: str, db: str) -> Table:
             # noinspection PyArgumentList
             return Table(table, row[0], row[1], json.loads(row[2]), row[3], row[4])
         except TypeError:
-            raise TableNotFoundError
+            raise TableNotFoundInDBError(table)
 
 
 def update_last_created(db: str, table: str, timestamp: int, duration: int):

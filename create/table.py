@@ -5,6 +5,7 @@ from create.redshift import (drop_old_table, drop_temp_table, replace_old_table,
 from create.sqlite import (update_last_created, log_timestamps,
                            log_start)
 from create.timestamps import Timestamps
+from errors import TestsFailedError
 from utils.file_utils import load_processor
 from utils.logger import setup_logger
 from utils.utils import Table
@@ -38,7 +39,7 @@ def create_table(table: Table, db_path: str, views_path: str,
     ts.log('tests')
     if not test_results:
         drop_temp_table(table.name, connection, logger)
-        return
+        raise TestsFailedError(table.name)
 
     replace_old_table(table.name, connection, logger)
     ts.log('replace_old')

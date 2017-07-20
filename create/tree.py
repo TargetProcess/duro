@@ -11,7 +11,7 @@ import networkx as nx
 from create.sqlite import (load_info, is_running, reset_start,
                            get_average_completion_time, get_time_running)
 from create.table import create_table
-from errors import (TableNotFoundError, MaterializationError)
+from errors import (TableNotFoundInDBError, MaterializationError)
 from utils.global_config import GlobalConfig
 from utils.utils import Table
 
@@ -47,7 +47,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     except MaterializationError as e:
         tree_logger.error(e)
         reset_start(table.name, global_config.db_path)
-        send_slack_notification(str(e))
+        send_slack_notification(str(e), f'Error while creating {e.table}')
 
 
 def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
@@ -55,9 +55,8 @@ def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
         children = list(graph[root].keys())
         logger.info(f'Children of {root}: {children}')
         return children
-    except KeyError:
-        raise TableNotFoundError(
-            'There’s no table with this name in dependencies graph.')
+    except KeyError as e:
+        raise TableNotFoundInDBError(e)
 
 
 def should_be_created(table: Table, db_path: str, logger: Logger,
