@@ -6,9 +6,11 @@ import arrow
 import networkx as nx
 
 from create.sqlite import (load_info, is_running, reset_start,
-                           get_average_completion_time, get_time_running)
+                           get_average_completion_time, get_time_running,
+                           set_waiting)
 from create.table import create_table
-from errors import (TableNotFoundInDBError, MaterializationError)
+from errors import (TableNotFoundInDBError, MaterializationError,
+                    TableNotFoundInGraphError)
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
 from utils.logger import setup_logger
@@ -25,7 +27,7 @@ def create_tree(root: str, global_config: GlobalConfig,
         tree_logger.info(f'Updating interval for {root}')
         # noinspection PyArgumentList
         table = Table(table.name, table.query, interval, table.config,
-                      table.last_created, table.force)
+                      table.last_created, table.force, table.waiting)
 
     if not should_be_created(table, global_config.db_path, tree_logger,
                              remaining_tables):
@@ -36,10 +38,10 @@ def create_tree(root: str, global_config: GlobalConfig,
     remaining_tables += len(children)
     tree_logger.info(f'Tables remaining: {remaining_tables}')
 
-    handle_cycles(global_config, table, remaining_tables)
-
     for child in children:
+        set_waiting(table.name, global_config.db_path, True)
         create_tree(child, global_config, table.interval, remaining_tables)
+        set_waiting(table.name, global_config.db_path, False)
     try:
         tree_logger.info(f'Creating {table.name}')
         create_table(table, global_config.db_path, global_config.views_path,
@@ -56,11 +58,15 @@ def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
         logger.info(f'Children of {root}: {children}')
         return children
     except KeyError as e:
-        raise TableNotFoundInDBError(e)
+        raise TableNotFoundInGraphError(e)
 
 
 def should_be_created(table: Table, db_path: str, logger: Logger,
                       remaining_tables: int) -> bool:
+    if table.waiting:
+        logger.info(f'{table.name} is waiting for its children to be updated, won’t be updated now')
+        return False
+
     if is_running(table.name, db_path):
         logger.info('Already running, waiting till done')
         finished = wait_till_finished(table.name, db_path, logger)
@@ -70,9 +76,11 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
             return False
 
     if table.force:
+        logger.info(f'Force flag is set for {table.name}, will be updated now')
         return True
 
     if table.last_created is None or table.interval is None:
+        logger.info(f'{table.name} is fresh enough, won’t be updated now')
         return True
 
     delta = arrow.now() - arrow.get(table.last_created)
@@ -85,13 +93,6 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
         return False
     else:
         return True
-
-
-def handle_cycles(global_config: GlobalConfig, table: Table,
-                  remaining_tables: int):
-    if table.name == 'satisfaction.companies':
-        create_table(table, global_config.db_path, global_config.views_path,
-                     remaining_tables)
 
 
 def wait_till_finished(table: str, db: str, logger: Logger) -> bool:

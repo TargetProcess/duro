@@ -8,6 +8,7 @@ class Table(NamedTuple):
     config: Dict
     last_created: int
     force: bool
+    waiting: bool
 
 
 class DistSortKeys(NamedTuple):

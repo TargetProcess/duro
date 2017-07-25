@@ -59,11 +59,11 @@ def is_already_in_db(table: str, cursor) -> bool:
 
 def insert_table(table: str, query: str, interval: int, config: str, cursor):
     cursor.execute('''INSERT INTO tables 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                    (table, query,
                     interval, config,
                     None, 0, 0,
-                    1, 0, None))
+                    1, 0, None, None))
 
 
 def should_be_updated(table: str, query: str, interval: int,
@@ -97,7 +97,8 @@ def create_tables_table(cursor):
                     (table_name text, query text, 
                     interval integer, config text, 
                     last_created integer, mean real, times_run integer,
-                    force integer, started integer, deleted integer);''')
+                    force integer, started integer, deleted integer,
+                    waiting integer);''')
 
 
 def save_commit(commit: str, cursor):
