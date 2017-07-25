@@ -17,7 +17,6 @@ def get_jobs(floor: int, ceiling: int, db):
                         COALESCE(drop_old, "insert") AS "finish"
                     FROM timestamps
                     WHERE "start" BETWEEN ? AND ?
-                    AND deleted IS NULL
                     
                     UNION ALL
                     
