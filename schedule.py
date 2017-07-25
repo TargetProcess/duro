@@ -96,7 +96,7 @@ if __name__ == '__main__':
         main(global_config.views_path,
              global_config.db_path,
              logger,
-             strict=True, use_git=False)
+             strict=False, use_git=False)
     except SchedulerError as e:
         send_slack_notification(str(e), 'Scheduler error')
         logger.error('Couldn‘t build a schedule for this views folder')
