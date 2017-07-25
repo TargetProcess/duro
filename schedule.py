@@ -11,6 +11,7 @@ from notifications.slack import send_slack_notification
 from schedule.commits import get_previous_commit, get_all_commits
 from schedule.sqlite import save_to_db
 from utils.file_utils import list_view_files
+from utils.global_config import load_global_config
 from utils.graph_utils import (find_roots_without_interval, detect_cycles,
                                copy_graph_without_attributes)
 from utils.logger import setup_logger
@@ -41,8 +42,8 @@ def draw_subgraphs(graph: nx.DiGraph):
         counter += 1
 
 
-def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
-         use_git=False):
+def main(sql_path: str, db_path: str, logger: Logger,
+         strict=False, use_git=False):
     latest_commit = None
     if use_git:
         commits = get_all_commits(sql_path)
@@ -90,8 +91,12 @@ def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
 
 if __name__ == '__main__':
     logger = setup_logger('scheduler')
+    global_config = load_global_config()
     try:
-        main('./views', logger, strict=True, use_git=False)
+        main(global_config.views_path,
+             global_config.db_path,
+             logger,
+             strict=True, use_git=False)
     except SchedulerError as e:
         send_slack_notification(str(e), 'Scheduler error')
         logger.error('Couldn‘t build a schedule for this views folder')

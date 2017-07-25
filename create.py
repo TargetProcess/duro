@@ -19,7 +19,7 @@ def create(root_table: str):
 
 if __name__ == '__main__':
     while True:
-        new_tables = get_tables_to_create('./duro.db')
+        new_tables = get_tables_to_create(load_global_config().db_path)
         print(datetime.now(), len(new_tables), 'new tables')
         for t in new_tables:
             create(t[0])
