@@ -2,9 +2,6 @@ import time
 from logging import Logger
 from typing import List
 
-from notifications.slack import send_slack_notification
-from utils.logger import setup_logger
-
 import arrow
 import networkx as nx
 
@@ -12,7 +9,9 @@ from create.sqlite import (load_info, is_running, reset_start,
                            get_average_completion_time, get_time_running)
 from create.table import create_table
 from errors import (TableNotFoundInDBError, MaterializationError)
+from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
+from utils.logger import setup_logger
 from utils.utils import Table
 
 
@@ -43,7 +42,8 @@ def create_tree(root: str, global_config: GlobalConfig,
         create_tree(child, global_config, table.interval, remaining_tables)
     try:
         tree_logger.info(f'Creating {table.name}')
-        create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
+        create_table(table, global_config.db_path, global_config.views_path,
+                     remaining_tables)
     except MaterializationError as e:
         tree_logger.error(e)
         reset_start(table.name, global_config.db_path)
@@ -87,9 +87,11 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
         return True
 
 
-def handle_cycles(global_config: GlobalConfig, table: Table, remaining_tables: int):
+def handle_cycles(global_config: GlobalConfig, table: Table,
+                  remaining_tables: int):
     if table.name == 'satisfaction.companies':
-        create_table(table, global_config.db_path, global_config.views_path, remaining_tables)
+        create_table(table, global_config.db_path, global_config.views_path,
+                     remaining_tables)
 
 
 def wait_till_finished(table: str, db: str, logger: Logger) -> bool:

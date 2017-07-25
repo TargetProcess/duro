@@ -10,7 +10,7 @@ def send_slack_notification(message: str, title: str = None,
     logger = setup_logger('slack')
 
     if slack_config is None:
-        logger.info('Couldn’t load Slack config')
+        logger.info(f'Couldn’t load Slack config to send “{message}”')
         return
 
     slack = slackweb.Slack(slack_config.url)

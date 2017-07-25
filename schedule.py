@@ -54,18 +54,21 @@ def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
 
     graph = build_graph(sql_path)
     logger.info(f'Built graph for {sql_path}')
-    is_dag, cycles = detect_cycles(graph, strict)
+    if strict:
+        valid, cycles = detect_cycles(graph)
+    else:
+        valid, cycles = True, None
     nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ['contents', 'interval']),
         'dependencies.dot')
     logger.info(f'Saved graph to file')
 
-    if not is_dag:
+    if strict and not valid:
         logger.error('Views dependency graph is not a DAG. Cycles detected:')
         for cycle in cycles:
-            print(cycle)
-        raise NotADAGError
+            logger.error(sorted(cycle))
+        raise NotADAGError(f'Graph in {sql_path} is not a DAG.')
 
     roots_without_interval = find_roots_without_interval(graph)
 

@@ -18,11 +18,6 @@ class CreationError(MaterializationError):
         super().__init__(message)
 
 
-class MaterializationGraphError(SchedulerError):
-    """Basic exception for graph-related errors"""
-    # def __init__(self):
-
-
 class NotADAGError(SchedulerError):
     """When a views dependency graph is not a DAG"""
 
