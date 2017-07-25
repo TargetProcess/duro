@@ -21,4 +21,8 @@ def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
 
 
 def load_grant_select_statements(table: str, config: Dict) -> str:
-    return f'''GRANT SELECT ON {table}_temp TO {config['grant_select']}'''
+    users = config.get('grant_select')
+    if users is not None:
+        return f'''GRANT SELECT ON {table}_temp TO {config['grant_select']}'''
+    else:
+        return ''
