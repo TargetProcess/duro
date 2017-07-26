@@ -1,5 +1,6 @@
 import configparser
-from typing import NamedTuple
+from functools import lru_cache
+from typing import NamedTuple, Dict, Union
 
 import sys
 
@@ -11,6 +12,12 @@ class GlobalConfig(NamedTuple):
     views_path: str
     logs_path: str
     graph: nx.DiGraph
+
+
+class SlackConfig(NamedTuple):
+    url: str
+    success_channel: str
+    failure_channel: str
 
 
 def load_global_config() -> GlobalConfig:
@@ -28,3 +35,21 @@ def load_global_config() -> GlobalConfig:
         print('No ’main’ section in config.conf')
         sys.exit(1)
 
+
+@lru_cache()
+def load_slack_config() -> Union[SlackConfig, None]:
+    try:
+        config = configparser.ConfigParser()
+        config.read('config.conf')
+        url = config['slack']['url']
+        channel = config['slack'].get('channel')
+        success_channel = config['slack'].get('success_channel', channel)
+        failure_channel = config['slack'].get('failure_channel', channel)
+        # noinspection PyArgumentList
+        return SlackConfig(url, success_channel, failure_channel)
+    except configparser.Error as e:
+        print(e)
+        return None
+    except KeyError as e:
+        print(f'No value for {e}')
+        return None

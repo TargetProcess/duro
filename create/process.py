@@ -44,7 +44,7 @@ def load_processor(processor: str) -> Tuple:
         processor_module = loader.load_module()
         return processor_module.process, processor_module.columns
     except AttributeError:
-        raise ProcessorNotFoundError(f'Could’t load a processor from {processor}')
+        raise ProcessorNotFoundError(processor)
 
 
 def process_data(data: List[Dict], processor: str, logger: Logger) -> Tuple[List[Dict], List]:
@@ -123,7 +123,7 @@ def copy_to_redshift(filename: str, table: str, connection,
             connection.commit()
             return arrow.now().timestamp
     except psycopg2.Error:
-        raise RedshiftUploadError
+        raise RedshiftUploadError(table)
 
 
 def remove_csv_files(filename: str):

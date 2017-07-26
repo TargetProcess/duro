@@ -59,27 +59,37 @@ def is_already_in_db(table: str, cursor) -> bool:
 
 def insert_table(table: str, query: str, interval: int, config: str, cursor):
     cursor.execute('''INSERT INTO tables 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                    (table, query,
                     interval, config,
                     None, 0, 0,
-                    1, 0, None))
+                    1, 0, None, None))
+
+
+def should_be_updated(table: str, query: str, interval: int,
+                      config: str, cursor) -> bool:
+    cursor.execute('''SELECT query, interval, config
+                    FROM tables
+                    WHERE table_name = ?''', (table, ))
+    current = cursor.fetchone()
+    if current != (query, interval, config):
+        return True
+    return False
 
 
 def update_table(table: str, query: str, interval: int, config: str,
                  cursor) -> int:
-    cursor.execute('''UPDATE tables 
-                    SET query = ?, 
-                        interval = ?, 
-                        config = ?, 
-                        force = 1
-                    WHERE table_name = ? 
-                        AND (query != ? OR query IS NULL
-                            OR interval != ? OR interval IS NULL
-                            OR config != ? OR config IS NULL
-                        )''',
-                   (query, interval, config, table, query, interval, config))
-    return cursor.rowcount
+    if should_be_updated(table, query, interval, config, cursor):
+        cursor.execute('''UPDATE tables 
+                        SET query = ?, 
+                            interval = ?, 
+                            config = ?, 
+                            force = 1
+                        WHERE table_name = ?''',
+                       (query, interval, config, table))
+        return cursor.rowcount
+    else:
+        return 0
 
 
 def create_tables_table(cursor):
@@ -87,7 +97,8 @@ def create_tables_table(cursor):
                     (table_name text, query text, 
                     interval integer, config text, 
                     last_created integer, mean real, times_run integer,
-                    force integer, started integer, deleted integer);''')
+                    force integer, started integer, deleted integer,
+                    waiting integer);''')
 
 
 def save_commit(commit: str, cursor):

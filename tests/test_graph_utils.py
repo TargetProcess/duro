@@ -2,7 +2,7 @@ import networkx as nx
 
 from utils.graph_utils import (find_sources, find_sources_without_attribute,
                                copy_graph_without_attributes,
-                               get_all_successors)
+                               get_all_successors, detect_cycles)
 
 no_sources = nx.DiGraph([[1, 2], [3, 4], [3, 1], [4, 2], [2, 3]],
                         name='no sources')
@@ -11,11 +11,15 @@ no_edges = nx.DiGraph(name='no edges')
 no_edges.add_nodes_from([1, 2, 3, 4])
 
 simple_tree = nx.DiGraph([[1, 2], [1, 3], [1, 4], [1, 5]])
+simple_cycle = nx.DiGraph([[1, 2], [2, 1]])
 
 two_trees = nx.DiGraph([[1, 2], [1, 3], [1, 4], [6, 7], [6, 8]])
 
 two_trees_and_a_cycle = nx.DiGraph([[1, 2], [1, 3], [1, 4], [1, 5], [6, 7],
                                     [6, 8], [9, 10], [10, 11], [11, 9]])
+
+two_cycles = nx.DiGraph([['a', 'b'], ['b', 'c'], ['c', 'a'],
+                         ['c', 'e'], ['e', 'f'], ['f', 'c']])
 
 two_trees_and_a_node = nx.DiGraph(
     [[1, 2], [1, 3], [1, 4], [1, 5], [6, 7], [6, 8]])
@@ -39,11 +43,6 @@ scale_free = nx.DiGraph(
 
 graph = two_trees
 nx.nx_pydot.to_pydot(graph).write_png('graph-test.png')
-
-
-# print(graph.edges())
-# edges = [(b, a) for (a, b) in graph.edges()]
-# print(edges)
 
 
 def test_find_sources():
@@ -114,3 +113,19 @@ def test_get_all_successor():
     assert sorted(get_all_successors(three_level_tree, 2)) == [2, 5, 6, 8]
     assert sorted(get_all_successors(graph_one, 1)) == [1, 3, 4, 5, 6, 7, 8, 9]
     assert sorted(get_all_successors(graph_one, 5)) == [5, 7, 8, 9]
+
+
+def test_detect_cycles():
+    graphs = [simple_tree,
+              two_trees_and_a_cycle,
+              two_cycles,
+              simple_cycle]
+    results = []
+    for graph in graphs:
+        is_dag, cycles = detect_cycles(graph)
+        sorted_cycles = sorted(sorted(list(cycle)) for cycle in cycles)
+        results.append((is_dag, sorted_cycles))
+    assert results == [(True, []),
+                       (False, [[9, 10, 11]]),
+                       (False, [['a', 'b', 'c'], ['c', 'e', 'f']]),
+                       (False, [[1, 2]])]

@@ -1,5 +1,6 @@
-import networkx as nx
 from typing import List, Tuple
+
+import networkx as nx
 
 
 def find_roots_without_interval(graph: nx.DiGraph) -> List[str]:
@@ -7,28 +8,24 @@ def find_roots_without_interval(graph: nx.DiGraph) -> List[str]:
 
 
 def find_sources(graph: nx.DiGraph) -> List[str]:
-    return [node for (node, in_degree) in graph.in_degree().items() if in_degree == 0]
+    return [node for (node, in_degree) in graph.in_degree().items() if
+            in_degree == 0]
 
 
-def find_sources_without_attribute(graph: nx.DiGraph, attribute: str) -> List[str]:
+def find_sources_without_attribute(graph: nx.DiGraph, attribute: str) -> List[
+    str]:
     roots = find_sources(graph)
     nodes = dict(graph.nodes(data=True))
     return [root for root in roots if not nodes[root].get(attribute)]
 
 
-def detect_cycles(source_graph: nx.DiGraph, strict: bool) -> Tuple:
-    # TODO: add tests
-    if strict:
-        graph = source_graph
-    else:
-        nodes = dict(source_graph.nodes(data=True))
-        nodes_with_interval = [k for k, v in nodes.items() if v.get('interval') is not None]
-        graph = source_graph.copy().subgraph(nodes_with_interval)
-
-    return nx.is_directed_acyclic_graph(graph), nx.simple_cycles(graph)
+def detect_cycles(source_graph: nx.DiGraph) -> Tuple:
+    return nx.is_directed_acyclic_graph(source_graph), nx.simple_cycles(
+        source_graph)
 
 
-def copy_graph_without_attributes(source_graph: nx.DiGraph, attributes: List) -> nx.DiGraph:
+def copy_graph_without_attributes(source_graph: nx.DiGraph,
+                                  attributes: List) -> nx.DiGraph:
     graph = source_graph.copy()
     for node in graph:
         for attribute in attributes:

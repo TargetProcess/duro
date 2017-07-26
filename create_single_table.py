@@ -51,6 +51,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # noinspection PyArgumentList
     table = Table(args.table, load_query(args.table, args.path), None,
-                  parse_table_config(args.table, args.path), None, None)
+                  parse_table_config(args.table, args.path), None, None, None)
     create_table(table, args.path, args.verbose)
 

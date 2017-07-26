@@ -6,10 +6,12 @@ from typing import List
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
-                    MaterializationError)
+                    SchedulerError)
+from notifications.slack import send_slack_notification
 from schedule.commits import get_previous_commit, get_all_commits
 from schedule.sqlite import save_to_db
 from utils.file_utils import list_view_files
+from utils.global_config import load_global_config
 from utils.graph_utils import (find_roots_without_interval, detect_cycles,
                                copy_graph_without_attributes)
 from utils.logger import setup_logger
@@ -40,8 +42,8 @@ def draw_subgraphs(graph: nx.DiGraph):
         counter += 1
 
 
-def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
-         use_git=False):
+def main(sql_path: str, db_path: str, logger: Logger,
+         strict=False, use_git=False):
     latest_commit = None
     if use_git:
         commits = get_all_commits(sql_path)
@@ -53,18 +55,21 @@ def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
 
     graph = build_graph(sql_path)
     logger.info(f'Built graph for {sql_path}')
-    is_dag, cycles = detect_cycles(graph, strict)
+    if strict:
+        valid, cycles = detect_cycles(graph)
+    else:
+        valid, cycles = True, None
     nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ['contents', 'interval']),
         'dependencies.dot')
     logger.info(f'Saved graph to file')
 
-    if not is_dag:
+    if strict and not valid:
         logger.error('Views dependency graph is not a DAG. Cycles detected:')
         for cycle in cycles:
-            print(cycle)
-        raise NotADAGError
+            logger.error(sorted(cycle))
+        raise NotADAGError(f'Graph in {sql_path} is not a DAG.')
 
     roots_without_interval = find_roots_without_interval(graph)
 
@@ -75,16 +80,23 @@ def main(sql_path, logger: Logger, strict=False, db_path='./duro.db',
         raise RootsWithoutIntervalError
 
     updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
-    updates = f'{new} new tables. {updated} updated tables.'
+    updates = f'New tables: {new}. Updated tables: {updated}.'
     if use_git:
-        logger.info(f'Rescheduled for commit {latest_commit}. {updates}')
+        message = f'Rescheduled for commit {latest_commit}. {updates}'
     else:
-        logger.info(f'Rescheduled. {updates}')
+        message = f'Rescheduled. {updates}'
+    logger.info(message)
+    send_slack_notification(updates, 'Rescheduled views', success=True)
 
 
 if __name__ == '__main__':
     logger = setup_logger('scheduler')
+    global_config = load_global_config()
     try:
-        main('./views', logger, strict=False, use_git=False)
-    except MaterializationError:
+        main(global_config.views_path,
+             global_config.db_path,
+             logger,
+             strict=False, use_git=False)
+    except SchedulerError as e:
+        send_slack_notification(str(e), 'Scheduler error')
         logger.error('Couldn‘t build a schedule for this views folder')

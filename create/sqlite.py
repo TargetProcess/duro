@@ -2,7 +2,7 @@ import json
 import sqlite3
 
 from create.timestamps import Timestamps
-from errors import TableNotFoundError
+from errors import TableNotFoundInDBError
 from utils.utils import Table
 from typing import List, Tuple
 
@@ -11,31 +11,37 @@ def load_info(table: str, db: str) -> Table:
     with sqlite3.connect(db) as connection:
         try:
             cursor = connection.cursor()
-            cursor.execute('''SELECT query, interval, config, last_created, force
+            cursor.execute('''SELECT query, interval, 
+                                config, last_created, 
+                                force, waiting
                             FROM tables
-                            WHERE table_name = ? ''', (table,))
+                            WHERE table_name = ?''', (table,))
             row = cursor.fetchone()
             # noinspection PyArgumentList
-            return Table(table, row[0], row[1], json.loads(row[2]), row[3], row[4])
+            return Table(table, row[0], row[1],
+                         json.loads(row[2]), row[3], row[4], row[5])
         except TypeError:
-            raise TableNotFoundError
+            raise TableNotFoundInDBError(table)
 
 
 def update_last_created(db: str, table: str, timestamp: int, duration: int):
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute('''UPDATE tables 
-                        SET last_created = ?,
-                            mean = 
-                                (CASE WHEN times_run IS NOT NULL AND mean IS NOT NULL 
-                                    THEN (mean * times_run + ?) / (times_run + 1)
-                                ELSE ? END),
-                            times_run = 
-                                (CASE WHEN times_run IS NOT NULL THEN times_run + 1
-                                ELSE 1 END),
-                            started = NULL,
-                            force = NULL
-                        WHERE table_name = ? ''',
+                    SET last_created = ?,
+                        mean = 
+                            (CASE WHEN times_run IS NOT NULL 
+                                    AND mean IS NOT NULL 
+                                THEN (mean * times_run + ?) / (times_run + 1)
+                            ELSE ? END),
+                        times_run = 
+                            (CASE WHEN times_run IS NOT NULL 
+                                THEN times_run + 1
+                            ELSE 1 END),
+                        started = NULL,
+                        force = NULL,
+                        waiting = NULL
+                    WHERE table_name = ? ''',
                        (timestamp, duration, duration, table))
 
 
@@ -65,6 +71,13 @@ def reset_start(table: str, db: str):
         connection.execute(f'''UPDATE tables SET started = NULL
                         WHERE table_name = ?''',
                            (table, ))
+
+
+def set_waiting(table: str, db: str, waiting: bool):
+    with sqlite3.connect(db) as connection:
+        connection.execute(f'''UPDATE tables SET waiting = ?
+                        WHERE table_name = ?''',
+                           (waiting, table,))
 
 
 def is_running(table: str, db: str) -> bool:

@@ -10,8 +10,9 @@ from server.formatters import (format_average_time, format_as_human_date,
 from server.sqlite import (get_all_tables, get_jobs, get_table_details, set_table_for_update)
 
 from create.sqlite import is_running
+from utils.global_config import load_global_config
 
-DATABASE = './duro.db'
+DATABASE = load_global_config().db_path
 
 app = Flask(__name__)
 app.config.update({'DATABASE': DATABASE})
