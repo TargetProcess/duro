@@ -132,3 +132,13 @@ def get_tables_to_create(db: str) -> List[Tuple]:
             AND deleted IS NULL
                             ''')
         return cursor.fetchall()
+
+
+def get_overview_stats(db: str, hours: int) -> Tuple[int, int]:
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute('''SELECT COUNT(DISTINCT "table"), COUNT(*) 
+                        FROM timestamps
+                        WHERE (strftime('%s', 'now') - finish) / 3600 < ?
+                        ''', (hours, ))
+        return cursor.fetchone()

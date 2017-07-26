@@ -87,7 +87,8 @@ def main(sql_path: str, db_path: str, logger: Logger,
         message = f'Rescheduled. {updates}'
     logger.info(message)
     if updated != 0 or new != 0:
-        send_slack_notification(updates, 'Rescheduled views', success=True)
+        send_slack_notification(updates, 'Rescheduled views',
+                                message_type='failure')
 
 
 if __name__ == '__main__':
