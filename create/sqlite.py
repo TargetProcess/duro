@@ -1,6 +1,8 @@
 import json
 import sqlite3
 
+import arrow
+
 from create.timestamps import Timestamps
 from errors import TableNotFoundInDBError
 from utils.utils import Table
@@ -77,7 +79,26 @@ def set_waiting(table: str, db: str, waiting: bool):
     with sqlite3.connect(db) as connection:
         connection.execute(f'''UPDATE tables SET waiting = ?
                         WHERE table_name = ?''',
-                           (waiting, table,))
+                           (waiting if not waiting else arrow.now().timestamp,
+                            table))
+
+
+def is_waiting(table: str, db: str) -> Tuple[bool, bool]:
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute(f'''SELECT waiting 
+                    FROM tables
+                    WHERE table_name = ?''',
+                       (table,))
+        result = cursor.fetchone()
+        if not result or not result[0]:
+            return False, False
+
+    time_waiting = get_time_waiting(table, db)
+    if time_waiting > 7200:
+        return True, True
+    else:
+        return True, False
 
 
 def is_running(table: str, db: str) -> bool:
@@ -95,6 +116,17 @@ def get_time_running(table: str, db: str) -> int:
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
         cursor.execute(f'''SELECT strftime('%s', 'now') - started 
+                    FROM tables
+                    WHERE table_name = ?''',
+                       (table,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+
+def get_time_waiting(table: str, db: str) -> int:
+    with sqlite3.connect(db) as connection:
+        cursor = connection.cursor()
+        cursor.execute(f'''SELECT strftime('%s', 'now') - waiting 
                     FROM tables
                     WHERE table_name = ?''',
                        (table,))

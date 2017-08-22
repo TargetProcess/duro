@@ -7,7 +7,7 @@ import networkx as nx
 
 from create.sqlite import (load_info, is_running, reset_start,
                            get_average_completion_time, get_time_running,
-                           set_waiting)
+                           set_waiting, is_waiting)
 from create.table import create_table
 from errors import (TableNotFoundInDBError, MaterializationError,
                     TableNotFoundInGraphError)
@@ -63,9 +63,13 @@ def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
 
 def should_be_created(table: Table, db_path: str, logger: Logger,
                       remaining_tables: int) -> bool:
-    if table.waiting:
+    waiting, waiting_too_long = is_waiting(table.name, db_path)
+    if waiting and not waiting_too_long:
         logger.info(f'{table.name} is waiting for its children to be updated, won’t be updated now')
         return False
+    if waiting_too_long:
+        logger.info('Can’t be waiting for so long, resetting the flag')
+        set_waiting(table.name, db_path, False)
 
     if is_running(table.name, db_path):
         logger.info('Already running, waiting till done')
