@@ -81,7 +81,6 @@ def show_current(from_date: str = None, to_date: str = None):
 @app.route('/api/jobs')
 def jobs():
     db = get_db()
-    print(request.args.get('from'), type(request.args.get('from')))
     floor = arrow.get(request.args.get('from')).timestamp
     ceiling = arrow.get(request.args.get('to')).timestamp
     jobs = [{'table': job['table'],
@@ -113,7 +112,6 @@ def prepare_table_details(details: List) -> Tuple[List, List]:
 @app.route('/update', methods=['POST'])
 def register_update_request():
     table = request.form['table']
-    print('in register', table)
     force_tree_update = request.form.get('tree', 0)
     if is_running(table, DATABASE):
         return jsonify({'message': 'Already running'})
