@@ -4,12 +4,12 @@ from typing import List, Tuple
 import arrow
 from flask import Flask, g, render_template, request, jsonify
 
+from create.sqlite import is_running
 from server.formatters import (format_average_time, format_as_human_date,
                                format_as_date, format_interval,
                                print_log, skip_none)
-from server.sqlite import (get_all_tables, get_jobs, get_table_details, set_table_for_update)
-
-from create.sqlite import is_running
+from server.sqlite import (get_all_tables, get_jobs, get_table_details,
+                           set_table_for_update)
 from utils.global_config import load_global_config
 
 DATABASE = load_global_config().db_path
@@ -84,11 +84,12 @@ def jobs():
     print(request.args.get('from'), type(request.args.get('from')))
     floor = arrow.get(request.args.get('from')).timestamp
     ceiling = arrow.get(request.args.get('to')).timestamp
-    return jsonify([{'table': job['table'],
-                     'start': arrow.get(job['start']).format(),
-                     'finish': arrow.get(job['finish']).format()}
-                    for job in get_jobs(floor, ceiling, db)
-                    ])
+    jobs = [{'table': job['table'],
+             'start': arrow.get(job['start']).format(),
+             'finish': arrow.get(job['finish']).format() if job['finish'] else None
+             }
+            for job in get_jobs(floor, ceiling, db)]
+    return jsonify(jobs)
 
 
 @app.route('/tables/<table>')
