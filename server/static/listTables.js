@@ -64,9 +64,7 @@ var formatMinutes = function (text) {
 
 
 var displayUpdateSuccess = function (result) {
-    var id = result.table.replace('.', '-');
-    $('#update-' + id).text('Running...');
-    $('#update-tree-' + id).text('Running...')
+    $('[data-id="' + result.table + '"]').text('Running...');
 };
 
 var displayUpdateFailure = function (result) {
@@ -75,21 +73,7 @@ var displayUpdateFailure = function (result) {
 
 
 var buildTable = function (tablesList) {
-    var tablesSorted = tablesList.sort(function (a, b) {
-        // var first = a.last_created || 1000000000,
-        //     second = b.last_created || 1000000000;
-        // return second - first;
-        // if (a.last_created && b.last_created) {
-        //     return a.last_created > b.last_created;
-        // } else if (a.last_created && !b.last_created) {
-        //     return 1;
-        // } else if (!a.last_created && b.last_created) {
-        //     return -1;
-        // } else {
-        //     return b.table_name > a.table_name;
-        // }
-    });
-    var table = tablesSorted.reduce(function (acc, cur) {
+    var table = tablesList.reduce(function (acc, cur) {
         acc += '<tr><td class="align-middle"><a href="/tables/' + cur.table_name + '">' + cur.table_name + '</a></td>'
             + '<td class="align-middle">' + cur.interval + '</td>'
             + '<td class="align-middle">' + cur.last_created + '</td>'
