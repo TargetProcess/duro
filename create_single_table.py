@@ -43,6 +43,7 @@ def create_table(table: Table, views_path: str, verbose=False):
     drop_old_table(table.name, connection, logger)
     connection.close()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('table', help='table to create', type=str)

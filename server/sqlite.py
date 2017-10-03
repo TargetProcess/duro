@@ -55,6 +55,10 @@ def set_table_for_update(db, table: str, force_tree: int):
 
 def propagate_force_flag(db, table: str, graph: DiGraph):
     successors = get_all_successors(graph, table)
-    db.execute(f'''UPDATE tables SET force = 1
-                        WHERE table_name in {str(tuple(successors))}''')
+    if len(successors) == 1:
+        db.execute(f'''UPDATE tables SET force = 1
+                        WHERE table_name = {successors[0]}''')
+    else:
+        db.execute(f'''UPDATE tables SET force = 1
+                                WHERE table_name in {str(tuple(successors))}''')
     db.commit()
