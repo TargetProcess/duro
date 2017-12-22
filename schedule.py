@@ -74,10 +74,10 @@ def main(sql_path: str, db_path: str, logger: Logger,
     roots_without_interval = find_roots_without_interval(graph)
 
     if roots_without_interval:
-        logger.error(
-            'Some roots don’t have an interval specified. These roots are:',
-            roots_without_interval)
-        raise RootsWithoutIntervalError
+        error = f'Some roots don’t have an interval specified. ' \
+                f'These roots are: {roots_without_interval}',
+        logger.error(error)
+        raise RootsWithoutIntervalError(error)
 
     updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
     updates = f'New tables: {new}. Updated tables: {updated}.'
