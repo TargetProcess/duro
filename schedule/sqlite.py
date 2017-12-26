@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import arrow
 import networkx as nx
@@ -27,18 +27,18 @@ def save_to_db(graph: nx.DiGraph, db_path: str, sql_path: str,
     return updates
 
 
-def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple:
+def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple[List, List]:
     try:
-        updated_tables = 0
-        new_tables = 0
+        updated_tables = []
+        new_tables = []
 
         for table, query, interval, config in tables_and_queries:
             if is_already_in_db(table, cursor):
-                updated_tables += update_table(table, query, interval, config,
-                                               cursor)
+                updated_tables.append(update_table(table, query, interval, config,
+                                               cursor))
             else:
                 insert_table(table, query, interval, config, cursor)
-                new_tables += 1
+                new_tables.append(table)
 
         return updated_tables, new_tables
 
@@ -78,7 +78,7 @@ def should_be_updated(table: str, query: str, interval: int,
 
 
 def update_table(table: str, query: str, interval: int, config: str,
-                 cursor) -> int:
+                 cursor) -> Optional[str]:
     if should_be_updated(table, query, interval, config, cursor):
         cursor.execute('''UPDATE tables 
                         SET query = ?, 
@@ -87,9 +87,9 @@ def update_table(table: str, query: str, interval: int, config: str,
                             force = 1
                         WHERE table_name = ?''',
                        (query, interval, config, table))
-        return cursor.rowcount
+        return table
     else:
-        return 0
+        return None
 
 
 def create_tables_table(cursor):

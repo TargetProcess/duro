@@ -75,12 +75,14 @@ def main(sql_path: str, db_path: str, logger: Logger,
 
     if roots_without_interval:
         error = f'Some roots don’t have an interval specified. ' \
-                f'These roots are: {roots_without_interval}',
+                f'These roots are: {", ".join(roots_without_interval)}',
         logger.error(error)
         raise RootsWithoutIntervalError(error)
 
     updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
-    updates = f'New tables: {new}. Updated tables: {updated}.'
+    updates = (f'New tables: {", ".join(new)}. ' if new else '') \
+        + (f'Updated tables: {", ".join(updated)}.' if updated else '')
+
     if use_git:
         message = f'Rescheduled for commit {latest_commit}. {updates}'
     else:
