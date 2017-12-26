@@ -167,11 +167,13 @@ def get_tables_to_create(db: str) -> List[Tuple]:
         return cursor.fetchall()
 
 
-def get_overview_stats(db: str, hours: int) -> Tuple[int, int]:
+def get_overview_stats(db: str, hours: int) -> Tuple[int, int, float]:
     with sqlite3.connect(db) as connection:
         cursor = connection.cursor()
-        cursor.execute('''SELECT COUNT(DISTINCT "table"), COUNT(*) 
+        cursor.execute('''SELECT COUNT(DISTINCT "table"), 
+                            COUNT(*),
+                            round(100.0 * sum(finish - start) / (? * 3600), 2) 
                         FROM timestamps
                         WHERE (strftime('%s', 'now') - finish) / 3600 < ?
-                        ''', (hours, ))
+                        ''', (hours, hours, ))
         return cursor.fetchone()
