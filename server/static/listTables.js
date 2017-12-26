@@ -64,7 +64,7 @@ var formatMinutes = function (text) {
 
 
 var displayUpdateSuccess = function (result) {
-    $('[data-id="' + result.table + '"]').text('Running...');
+    $('[data-id="' + result.table + '"]').text('Scheduled');
 };
 
 var displayUpdateFailure = function (result) {
@@ -80,11 +80,12 @@ var buildTable = function (tablesList) {
             + '<td class="align-middle">' + cur.mean + '</td>';
         var id = cur.table_name.replace('.', '-');
         if (cur.started) {
-            acc += buildButton(cur.table_name, 'Running...', true)
-                + buildButton(cur.table_name, 'Running...', true) + '</tr>'
+            acc += buildButtonRow(cur.table_name, 'Running', true);
         } else if (cur.deleted) {
-            acc += buildButton(cur.table_name, 'Removed', true)
-                + buildButton(cur.table_name, 'Removed', true) + '</tr>'
+            acc += buildButtonRow(cur.table_name, 'Removed', true);
+        } else if (cur.force) {
+            acc += buildButton(cur.table_name, 'Scheduled', false)
+                + buildButton(cur.table_name, 'Update tree', false) + '</tr>'
         } else {
             acc += buildButton(cur.table_name, 'Update table', false)
                 + buildButton(cur.table_name, 'Update tree', false) + '</tr>'
@@ -95,6 +96,11 @@ var buildTable = function (tablesList) {
     $tables.find('tbody').html(table);
     styleTable($tables);
     addListener();
+};
+
+var buildButtonRow = function (table, label, isDisabled) {
+    var button = buildButton(table, label, isDisabled);
+    return button + button + '</tr>';
 };
 
 var buildButton = function (table, label, isDisabled) {
@@ -145,5 +151,4 @@ var addListener = function () {
 
 $(document).ready(function () {
     $.ajax({url: '/api/tables', success: buildTable});
-
 });

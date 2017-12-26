@@ -6,7 +6,8 @@ from utils.graph_utils import get_all_successors
 
 def get_all_tables(db):
     return db.execute('''
-            SELECT table_name, interval, last_created, mean, started, deleted
+            SELECT table_name, interval, last_created, 
+                mean, started, deleted, force
             FROM tables''').fetchall()
 
 
