@@ -30,7 +30,7 @@ def get_jobs(floor: int, ceiling: int, db):
                     ''', (floor, ceiling)).fetchall()
 
 
-def get_table_details(db, table: str):
+def get_table_details(db, table: str, limit: int = 100):
     return db.execute('''
                 SELECT t.table_name, t.interval,
                     ts.start, ts.connect, ts."select", ts.create_temp,
@@ -39,8 +39,9 @@ def get_table_details(db, table: str):
                 FROM tables t
                 LEFT JOIN timestamps ts ON t.table_name = ts."table"
                 WHERE t.table_name = ?
-                ORDER BY ts.drop_old DESC''',
-                      (table,)).fetchall()
+                ORDER BY ts.drop_old DESC
+                LIMIT ?''',
+                      (table, limit)).fetchall()
 
 
 def set_table_for_update(db, table: str, force_tree: int):
