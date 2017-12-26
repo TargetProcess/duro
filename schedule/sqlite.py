@@ -34,8 +34,9 @@ def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple[List, List]:
 
         for table, query, interval, config in tables_and_queries:
             if is_already_in_db(table, cursor):
-                updated_tables.append(update_table(table, query, interval, config,
-                                               cursor))
+                updated_tables.append(
+                    update_table(table, query, interval, config,
+                                 cursor))
             else:
                 insert_table(table, query, interval, config, cursor)
                 new_tables.append(table)
@@ -70,7 +71,7 @@ def should_be_updated(table: str, query: str, interval: int,
                       config: str, cursor) -> bool:
     cursor.execute('''SELECT query, interval, config
                     FROM tables
-                    WHERE table_name = ?''', (table, ))
+                    WHERE table_name = ?''', (table,))
     current = cursor.fetchone()
     if current != (query, interval, config):
         return True
@@ -89,7 +90,7 @@ def update_table(table: str, query: str, interval: int, config: str,
                        (query, interval, config, table))
         return table
     else:
-        return None
+        return ''
 
 
 def create_tables_table(cursor):
