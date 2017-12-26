@@ -6,6 +6,16 @@
     <link rel=stylesheet type=text/css
           href="{{ url_for('static', filename='lib/bootstrap.min.css') }}">
     <title>{% block title %}{% endblock %} — duro</title>
+    <style>
+        #stats {
+            /*margin-left:auto;*/
+            margin: 7px 0 auto auto;
+            /*margin-right:0;*/
+            text-align: right;
+            font-size: smaller;
+            /*margin-bottom: 10px;*/
+        }
+    </style>
 </head>
 <body>
 <div class="container">
@@ -24,6 +34,9 @@
                 </a>
             </li>
         </ul>
+        <div id="stats">
+
+        </div>
     </div>
 {% block content %}{% endblock %}
 </div>
@@ -34,6 +47,8 @@
 <script src="{{ url_for('static', filename='lib/bootstrap.min.js') }}"
         type="text/javascript"></script>
 <script src="{{ url_for('static', filename='lib/moment.min.js') }}"
+        type="text/javascript"></script>
+<script src="{{ url_for('static', filename='stats.js') }}"
         type="text/javascript"></script>
 {% block js %}{% endblock %}
 </body>

@@ -1,3 +1,5 @@
+from typing import Dict
+
 from networkx import DiGraph
 
 from utils.global_config import load_global_config
@@ -64,3 +66,17 @@ def propagate_force_flag(db, table: str, graph: DiGraph):
         db.execute(f'''UPDATE tables SET force = 1
                                 WHERE table_name in {str(tuple(successors))}''')
     db.commit()
+
+
+def get_overview_stats(db, hours: int) -> Dict:
+    cursor = db.cursor()
+    cursor.execute('''SELECT COUNT(DISTINCT "table"), 
+                        COUNT(*),
+                        round(100.0 * sum(finish - start) / (? * 3600), 2) 
+                    FROM timestamps
+                    WHERE (strftime('%s', 'now') - finish) / 3600 < ?
+                    ''', (hours, hours,))
+    row = cursor.fetchone()
+    return {'tables': row[0],
+            'updates': row[1],
+            'load': row[2]}

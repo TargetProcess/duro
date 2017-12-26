@@ -9,7 +9,7 @@ from server.formatters import (format_average_time, format_as_human_date,
                                format_as_date, format_interval,
                                print_log, skip_none)
 from server.sqlite import (get_all_tables, get_jobs, get_table_details,
-                           set_table_for_update)
+                           set_table_for_update, get_overview_stats)
 from utils.global_config import load_global_config
 
 DATABASE = load_global_config().db_path
@@ -119,6 +119,13 @@ def register_update_request():
     set_table_for_update(get_db(), table, force_tree_update)
     return jsonify({'message': f'Scheduled {table} for update',
                     'table': table})
+
+
+@app.route('/api/stats')
+def stats():
+    db = get_db(False)
+    stats = get_overview_stats(db, 24)
+    return jsonify(stats)
 
 
 def main():
