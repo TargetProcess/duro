@@ -17,7 +17,9 @@ def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
     keys = load_dist_sort_keys(config)
     return f'''CREATE TABLE {table}_temp
             {keys.distkey} {keys.sortkey} {keys.diststyle}
-            AS ({query});'''
+            AS (
+            {query}
+            );'''
 
 
 def load_grant_select_statements(table: str, config: Dict) -> str:
