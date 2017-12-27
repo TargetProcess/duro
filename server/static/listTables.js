@@ -1,4 +1,4 @@
-var formatColumn = function (table, colNumber, formatter) {
+const formatColumn = function (table, colNumber, formatter) {
     table.find('td:nth-child(' + colNumber + ')').each(function (index, el) {
         var $node = $(el),
             text = $node.text();
@@ -10,19 +10,19 @@ var formatColumn = function (table, colNumber, formatter) {
     });
 };
 
-var formatLastCreated = function (text) {
+const  formatLastCreated = function (text) {
     return moment.unix(text).fromNow();
 };
 
-var formatSeconds = function (text) {
-    var time = parseInt(text);
+const  formatSeconds = function (text) {
+    const time = parseInt(text);
     if (time === 0)
         return '';
-    var formatMinutes = function (remainder) {
+    const formatMinutes = function (remainder) {
         if (remainder === 0) {
             return '';
         }
-        var result = Math.floor(remainder / 60) + 'm ';
+        const result = Math.floor(remainder / 60) + 'm ';
         if (remainder % 60 !== 0) {
             return result + remainder % 60 + 's';
         }
@@ -39,17 +39,17 @@ var formatSeconds = function (text) {
         return formatMinutes(time);
     }
     if (time <= 86400) {
-        var hours = Math.floor(time / 3600);
-        var remainder = time % 3600;
+        const hours = Math.floor(time / 3600);
+        const remainder = time % 3600;
         return hours + 'h ' + formatMinutes(remainder);
     }
 
     if (time > 86400) {
-        var days = Math.floor(time / 86400);
-        remainder = time % 86400;
-        hours = Math.floor(remainder / 3600);
+        const days = Math.floor(time / 86400);
+        let remainder = time % 86400;
+        const hours = Math.floor(remainder / 3600);
         remainder = remainder % 3600;
-        var result = days + 'd ';
+        const result = days + 'd ';
         if (hours) {
             return result + hours + '{hours}h ' + formatMinutes(remainder);
         } else {
@@ -58,22 +58,22 @@ var formatSeconds = function (text) {
     }
 };
 
-var formatMinutes = function (text) {
+const formatMinutes = function (text) {
     return formatSeconds(parseInt(text) * 60);
 };
 
 
-var displayUpdateSuccess = function (result) {
+const displayUpdateSuccess = function (result) {
     $('[data-id="' + result.table + '"]').text('Scheduled');
 };
 
-var displayUpdateFailure = function (result) {
+const displayUpdateFailure = function (result) {
     console.log(result);
 };
 
 
-var buildTable = function (tablesList) {
-    var table = tablesList.reduce(function (acc, cur) {
+const buildTable = function (tablesList) {
+    const table = tablesList.reduce(function (acc, cur) {
         acc += '<tr><td class="align-middle"><a href="/tables/' + cur.table_name + '">' + cur.table_name + '</a></td>'
             + '<td class="align-middle">' + cur.interval + '</td>'
             + '<td class="align-middle">' + cur.last_created + '</td>'
@@ -92,24 +92,24 @@ var buildTable = function (tablesList) {
         }
         return acc;
     }, '');
-    var $tables = $('#tables');
+    const $tables = $('#tables');
     $tables.find('tbody').html(table);
     styleTable($tables);
     addListener();
 };
 
-var buildButtonRow = function (table, label, isDisabled) {
-    var button = buildButton(table, label, isDisabled);
+const buildButtonRow = function (table, label, isDisabled) {
+    const button = buildButton(table, label, isDisabled);
     return button + button + '</tr>';
 };
 
-var buildButton = function (table, label, isDisabled) {
-    var disabled = isDisabled ? 'disabled' : '';
+const buildButton = function (table, label, isDisabled) {
+    const disabled = isDisabled ? 'disabled' : '';
     return '<td><button class="btn" data-id="' + table + '"' + disabled + '>'
         + label + '</button></td>';
 };
 
-var styleTable = function ($tables) {
+const styleTable = function ($tables) {
     $tables.DataTable({
         "paging": false,
         "info": false,
@@ -123,12 +123,12 @@ var styleTable = function ($tables) {
 
 };
 
-var addListener = function () {
+const addListener = function () {
     $("button").click(function (e) {
         e.preventDefault();
-        var id = $(this).data('id');
-        var action = $(this).innerText;
-        var request = {
+        const id = $(this).data('id');
+        const action = this.innerText;
+        const request = {
             type: 'POST',
             url: '/update',
             success: displayUpdateSuccess,
