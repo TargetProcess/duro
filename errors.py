@@ -32,8 +32,8 @@ class GitError(SchedulerError):
 
 class TestsFailedError(CreationError):
     """When tests failed"""
-    def __init__(self, table):
-        super().__init__(table, f'Tests failed for `{table}`')
+    def __init__(self, table, failed_tests):
+        super().__init__(table, f'Tests failed for `{table}`. Failed tests: {failed_tests}')
 
 
 class TableNotFoundInDBError(CreationError):

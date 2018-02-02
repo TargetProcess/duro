@@ -1,5 +1,6 @@
 import os
 from logging import Logger
+from typing import Tuple, List, Optional
 
 from utils.file_utils import read_file
 
@@ -18,9 +19,9 @@ def load_tests(table: str, path: str, logger: Logger) -> str:
     return ''
 
 
-def run_tests(tests_queries: str, connection, logger: Logger) -> bool:
+def run_tests(tests_queries: str, connection, logger: Logger) -> Tuple[bool, Optional[List]]:
     if len(tests_queries) == 0:
-        return True
+        return True, None
 
     logger.info(f'Running tests')
     with connection.cursor() as cursor:
@@ -35,5 +36,6 @@ def run_tests(tests_queries: str, connection, logger: Logger) -> bool:
         if not passed:
             failed_columns = [result[0] for result in results if not result[1]]
             logger.info(f'Failed tests: {failed_columns}')
+            return passed, failed_columns
 
-        return passed
+        return passed, None

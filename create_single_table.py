@@ -34,7 +34,7 @@ def create_table(table: Table, views_path: str, verbose=False):
                           connection, logger)
 
     tests_queries = load_tests(table.name, views_path, logger)
-    test_results = run_tests(tests_queries, connection, logger)
+    test_results, _ = run_tests(tests_queries, connection, logger)
     if not test_results:
         drop_temp_table(table.name, connection, logger)
         return

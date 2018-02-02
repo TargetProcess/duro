@@ -35,11 +35,11 @@ def create_table(table: Table, db_path: str, views_path: str,
         ts.log('create_temp')
 
     tests_queries = load_tests(table.name, views_path, logger)
-    test_results = run_tests(tests_queries, connection, logger)
+    test_results, failed_tests = run_tests(tests_queries, connection, logger)
     ts.log('tests')
     if not test_results:
         drop_temp_table(table.name, connection, logger)
-        raise TestsFailedError(table.name)
+        raise TestsFailedError(table.name, failed_tests)
 
     replace_old_table(table.name, connection, logger)
     ts.log('replace_old')
