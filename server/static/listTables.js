@@ -117,7 +117,7 @@ const styleTable = $tables => {
     $tables.DataTable({
         "paging": false,
         "info": false,
-        "order": [[2, "asc"]]
+        "order": [[2, "desc"]]
     }).draw();
 
     formatColumn($tables, 3, formatLastCreated);
