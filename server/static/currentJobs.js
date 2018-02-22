@@ -1,6 +1,5 @@
-
-$.ajax('/api/jobs?from=' + floor + '&to=' + ceiling).done(function(data) {
-    var formattedData = data.map(function (cur) {
+$.ajax(`/api/jobs?from=${floor}&to=${ceiling}`).done(data => {
+    const formattedData = data.map(cur => {
         if (!cur.finish) {
             cur.finish = moment.now();
             cur.finished = false;
@@ -9,7 +8,8 @@ $.ajax('/api/jobs?from=' + floor + '&to=' + ceiling).done(function(data) {
         }
         return cur;
     });
-    var chart = new tauCharts.Chart({
+
+    let chart = new tauCharts.Chart({
         data: formattedData,
         type: 'horizontal-bar',
         x: 'finish',

@@ -1,4 +1,4 @@
-var chart = new tauCharts.Chart({
+let chart = new tauCharts.Chart({
     data: datasource,
     type: 'line',
     x: 'date',

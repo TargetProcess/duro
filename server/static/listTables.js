@@ -1,6 +1,6 @@
-const formatColumn = function (table, colNumber, formatter) {
+const formatColumn = (table, colNumber, formatter) => {
     table.find('td:nth-child(' + colNumber + ')').each(function (index, el) {
-        var $node = $(el),
+        let $node = $(el),
             text = $node.text();
         if (text && text !== 'null') {
             $node.text(formatter(text))
@@ -10,15 +10,15 @@ const formatColumn = function (table, colNumber, formatter) {
     });
 };
 
-const  formatLastCreated = function (text) {
-    return moment.unix(text).fromNow();
-};
+const formatLastCreated = text => moment.unix(text).fromNow();
 
-const  formatSeconds = function (text) {
+const formatSeconds = text => {
     const time = parseInt(text);
+
     if (time === 0)
         return '';
-    const formatMinutes = function (remainder) {
+
+    const formatMinutes = remainder => {
         if (remainder === 0) {
             return '';
         }
@@ -58,27 +58,31 @@ const  formatSeconds = function (text) {
     }
 };
 
-const formatMinutes = function (text) {
-    return formatSeconds(parseInt(text) * 60);
-};
+const formatMinutes = text => formatSeconds(parseInt(text) * 60);
 
 
-const displayUpdateSuccess = function (result) {
+const displayUpdateSuccess = result => {
     $('[data-id="' + result.table + '"]').text('Scheduled');
 };
 
-const displayUpdateFailure = function (result) {
+const displayUpdateFailure = result => {
     console.log(result);
 };
 
 
-const buildTable = function (tablesList) {
-    const table = tablesList.reduce(function (acc, cur) {
-        acc += '<tr><td class="align-middle"><a href="/tables/' + cur.table_name + '">' + cur.table_name + '</a></td>'
-            + '<td class="align-middle">' + cur.interval + '</td>'
-            + '<td class="align-middle">' + cur.last_created + '</td>'
-            + '<td class="align-middle">' + cur.mean + '</td>';
-        var id = cur.table_name.replace('.', '-');
+const buildTable = tablesList => {
+    const table = tablesList.reduce((acc, cur) => {
+        acc += `<tr>
+            <td class="align-middle">
+                <a href="/tables/${cur.table_name}">${cur.table_name}</a>
+            </td>
+            <td class="align-middle">${cur.interval}</td>
+            <td class="align-middle">${cur.last_created}</td>
+            <td class="align-middle">${cur.mean}</td>`;
+
+
+        // const id = cur.table_name.replace('.', '-');
+
         if (cur.started) {
             acc += buildButtonRow(cur.table_name, 'Running', true);
         } else if (cur.deleted) {
@@ -98,18 +102,18 @@ const buildTable = function (tablesList) {
     addListener();
 };
 
-const buildButtonRow = function (table, label, isDisabled) {
+const buildButtonRow = (table, label, isDisabled) => {
     const button = buildButton(table, label, isDisabled);
     return button + button + '</tr>';
 };
 
-const buildButton = function (table, label, isDisabled) {
+const buildButton = (table, label, isDisabled) => {
     const disabled = isDisabled ? 'disabled' : '';
     return '<td><button class="btn" data-id="' + table + '"' + disabled + '>'
         + label + '</button></td>';
 };
 
-const styleTable = function ($tables) {
+const styleTable = $tables => {
     $tables.DataTable({
         "paging": false,
         "info": false,
@@ -119,12 +123,10 @@ const styleTable = function ($tables) {
     formatColumn($tables, 3, formatLastCreated);
     formatColumn($tables, 2, formatMinutes);
     formatColumn($tables, 4, formatSeconds);
-
-
 };
 
-const addListener = function () {
-    $("button").click(function (e) {
+const addListener = () => {
+    $("button").click(e => {
         e.preventDefault();
         const id = $(this).data('id');
         const action = this.innerText;
@@ -149,6 +151,6 @@ const addListener = function () {
     });
 };
 
-$(document).ready(function () {
+$(document).ready(() => {
     $.ajax({url: '/api/tables', success: buildTable});
 });
