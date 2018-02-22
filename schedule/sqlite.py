@@ -64,7 +64,7 @@ def insert_table(table: str, query: str, interval: int, config: str, cursor):
                    (table, query,
                     interval, config,
                     None, 0, 0,
-                    1, 0, None, None))
+                    1, None, None, None))
 
 
 def should_be_updated(table: str, query: str, interval: int,
