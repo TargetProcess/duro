@@ -10,7 +10,11 @@ def get_all_tables(db):
     return db.execute('''
             SELECT table_name, interval, last_created, 
                 mean, started, deleted, force
-            FROM tables''').fetchall()
+            FROM tables
+            WHERE (strftime('%s', 'now') - deleted) / (3600 * 24) < 7
+                OR deleted is null
+            ORDER BY last_created DESC
+            ''').fetchall()
 
 
 def get_jobs(floor: int, ceiling: int, db):

@@ -128,7 +128,7 @@ def stats():
     return jsonify(stats)
 
 
-def main():
+def start_server():
     app.add_template_filter(format_average_time, 'format_avg_time')
     app.add_template_filter(format_as_human_date, 'format_int_as_human_date')
     app.add_template_filter(format_as_date, 'format_int_as_date')
@@ -138,4 +138,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    start_server()
