@@ -1,3 +1,6 @@
+from collections import defaultdict
+from datetime import datetime as dt, timedelta
+from functools import wraps
 from urllib.error import HTTPError
 
 import slackweb
@@ -6,6 +9,24 @@ from utils.global_config import load_slack_config
 from utils.logger import setup_logger
 
 
+def delay_duplicates(timeout=10):
+    def wrap(f):
+        calls = defaultdict(lambda: dt.min)
+
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            key = ''.join(str(arg)
+                          for arg in args + tuple(kwargs.values()))
+            previous_call = calls[key]
+            now = dt.now()
+            if now - previous_call >= timedelta(minutes=timeout):
+                calls[key] = now
+                return f(*args, **kwargs)
+        return wrapper
+    return wrap
+
+
+@delay_duplicates
 def send_slack_notification(message: str, title: str = None,
                             message_type: str = None):
     slack_config = load_slack_config()
