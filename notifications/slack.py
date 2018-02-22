@@ -26,7 +26,7 @@ def delay_duplicates(timeout=10):
     return wrap
 
 
-@delay_duplicates
+@delay_duplicates()
 def send_slack_notification(message: str, title: str = None,
                             message_type: str = None):
     slack_config = load_slack_config()
