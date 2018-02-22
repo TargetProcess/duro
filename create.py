@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 
-from create.sqlite import get_tables_to_create
+from create.sqlite import get_tables_to_create, reset_all_starts
 from create.tree import create_tree
 from errors import CreationError
 from notifications.slack import send_slack_notification
@@ -18,8 +18,10 @@ def create(root_table: str):
 
 
 if __name__ == '__main__':
+    db_path = load_global_config().db_path
+    reset_all_starts(db_path)
     while True:
-        new_tables = get_tables_to_create(load_global_config().db_path)
+        new_tables = get_tables_to_create(db_path)
         print(datetime.now(), len(new_tables), 'new tables')
         for t in new_tables:
             create(t[0])

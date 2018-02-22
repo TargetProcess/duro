@@ -75,6 +75,11 @@ def reset_start(table: str, db: str):
                            (table, ))
 
 
+def reset_all_starts(db: str):
+    with sqlite3.connect(db) as connection:
+        connection.execute('UPDATE tables SET started = NULL')
+
+
 def set_waiting(table: str, db: str, waiting: bool):
     with sqlite3.connect(db) as connection:
         connection.execute(f'''UPDATE tables SET waiting = ?
