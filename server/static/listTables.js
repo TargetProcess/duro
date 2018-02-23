@@ -81,7 +81,7 @@ const buildTable = tablesList => {
             <td class="align-middle">${cur.mean}</td>`;
 
 
-        // const id = cur.table_name.replace('.', '-');
+        const id = cur.table_name.replace('.', '-');
 
         if (cur.started) {
             acc += buildButtonRow(cur.table_name, 'Running', true);
@@ -126,7 +126,7 @@ const styleTable = $tables => {
 };
 
 const addListener = () => {
-    $("button").click(e => {
+    $("button").click(function(e) {
         e.preventDefault();
         const id = $(this).data('id');
         const action = this.innerText;
