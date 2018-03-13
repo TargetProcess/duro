@@ -61,10 +61,10 @@ class ProcessorNotFoundError(CreationError):
         super().__init__(processor, f'Processor `{processor}` not found')
 
 
-class RedshiftUploadError(CreationError):
+class RedshiftCopyError(CreationError):
     """Could’t copy a table into Redshift"""
     def __init__(self, table):
-        super().__init__(table, f'Couldn’t upload data to S3 for `{table}`')
+        super().__init__(table, f'Couldn’t copy data from S3 to `{table}`')
 
 
 class RedshiftConnectionError(CreationError):

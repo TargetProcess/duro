@@ -15,7 +15,7 @@ from create.timestamps import Timestamps
 from credentials import s3_credentials
 from utils.file_utils import load_ddl_query
 from utils.utils import Table
-from errors import ProcessorNotFoundError, RedshiftUploadError
+from errors import ProcessorNotFoundError, RedshiftCopyError
 
 
 def process_and_upload_data(table: Table, processor: str, connection, ts: Timestamps,
@@ -123,7 +123,7 @@ def copy_to_redshift(filename: str, table: str, connection,
             connection.commit()
             return arrow.now().timestamp
     except psycopg2.Error:
-        raise RedshiftUploadError(table)
+        raise RedshiftCopyError(table)
 
 
 def remove_csv_files(filename: str):
