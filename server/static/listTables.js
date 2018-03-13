@@ -152,5 +152,5 @@ const addListener = () => {
 };
 
 $(document).ready(() => {
-    $.ajax({url: '/api/tables', success: buildTable});
+    $.ajax({url: '/api/tables/', success: buildTable});
 });
