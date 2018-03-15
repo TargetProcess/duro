@@ -6,7 +6,7 @@ config.conf
 *.csv
 *.gzip
 __pycache__
-views
+./views
 *.yml
 *.dot
 *.db

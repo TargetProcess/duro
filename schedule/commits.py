@@ -9,7 +9,10 @@ from errors import GitError
 def get_all_commits(folder: str) -> List[str]:
     try:
         repo = Repo(folder)
-        return [commit.hexsha for commit in repo.iter_commits()]
+        if repo.active_branch.is_valid():
+            return [commit.hexsha for commit in repo.iter_commits()]
+        else:
+            return []
     except InvalidGitRepositoryError:
         raise GitError(f'No git repository in {folder}')
 

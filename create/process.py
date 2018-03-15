@@ -18,7 +18,8 @@ from utils.utils import Table
 from errors import ProcessorNotFoundError, RedshiftCopyError
 
 
-def process_and_upload_data(table: Table, processor: str, connection, ts: Timestamps,
+def process_and_upload_data(table: Table, processor: str, connection,
+                            ts: Timestamps,
                             views_path: str, logger: Logger) -> int:
     data = select_data(table.query, connection, logger)
     ts.log('select')

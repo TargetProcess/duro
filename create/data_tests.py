@@ -32,10 +32,17 @@ def run_tests(tests_queries: str, connection, logger: Logger) -> Tuple[bool, Opt
             results.append((cursor.description[0].name,
                             cursor.fetchone()[0]))
 
-        passed = all((result[1] for result in results))
-        if not passed:
-            failed_columns = [result[0] for result in results if not result[1]]
-            logger.info(f'Failed tests: {failed_columns}')
-            return passed, failed_columns
+    passed, failed_columns = parse_tests_results(results)
+    if failed_columns:
+        logger.info(f'Failed tests: {failed_columns}')
+    return passed, failed_columns
 
-        return passed, None
+
+def parse_tests_results(results) -> Tuple[bool, Optional[List]]:
+    passed = all((result[1] for result in results))
+    if not passed:
+        failed_columns = [result[0] for result in results if not result[1]]
+
+        return passed, failed_columns
+
+    return passed, None
