@@ -1,7 +1,7 @@
-import arrow
-from typing import Dict
 from logging import Logger
+from typing import Dict
 
+import arrow
 import psycopg2
 
 from create.table_config import add_dist_sort_keys, load_grant_select_statements
@@ -18,7 +18,8 @@ def create_connection():
         raise RedshiftConnectionError
 
 
-def create_temp_table(table: str, query: str, config: Dict, connection, logger: Logger) -> int:
+def create_temp_table(table: str, query: str, config: Dict, connection,
+                      logger: Logger) -> int:
     logger.info(f'Creating temp table for {table}')
 
     create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)

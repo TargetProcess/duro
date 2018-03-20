@@ -1,13 +1,11 @@
-import json
+import os
 from functools import reduce
 from typing import Dict, List, Set
-import os
-
 
 from utils.file_utils import read_config
 
 
-def parse_table_config(full_table_name: str, path: str) -> Dict:
+def parse_table_config(full_table_name: str, path: str) -> str:
     schema, table = full_table_name.split('.')
 
     global_config = read_config(os.path.join(path, 'global.conf'))
@@ -54,7 +52,3 @@ def merge_permissions(acc: Set, value: str) -> Set:
     to_remove = {val[1:] for val in new_values if val[0] == '-'}
 
     return acc.union(to_add).difference(to_remove)
-
-
-
-

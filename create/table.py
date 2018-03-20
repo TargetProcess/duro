@@ -16,6 +16,8 @@ def create_table(table: Table, db_path: str, views_path: str,
     logger = setup_logger(table.name)
     ts = Timestamps()
     ts.log('start')
+
+    # pylint: disable=no-member
     # noinspection PyUnresolvedReferences
     log_start(table.name, db_path, ts.start)
     logger.info(f'Creating {table.name} with interval {table.interval}')

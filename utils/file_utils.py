@@ -3,8 +3,7 @@ import glob
 import os
 from functools import lru_cache
 from itertools import chain
-from os.path import splitext
-from typing import List, Tuple, NamedTuple, Dict
+from typing import List, Tuple, NamedTuple, Dict, Optional
 
 
 class ViewFile(NamedTuple):
@@ -15,7 +14,7 @@ class ViewFile(NamedTuple):
 
 
 def parse_filename(filename: str) -> Tuple:
-    split = splitext(filename)[0].split()
+    split = os.path.splitext(filename)[0].split()
     interval = split[2] if len(split) > 1 else None
     folder, table = split[0].split('/') if '/' in split[0] else (None, split[0])
     if '.' in table:
@@ -56,8 +55,9 @@ def is_processor_ddl(filename: str) -> bool:
     path = os.path.dirname(filename)
     file = os.path.basename(filename)
     table_name = file.replace('_ddl', '')
-    processor_file = os.path.join(path,
-                                  f'{splitext(table_name)[0].split()[0]}.py')
+    processor_filename = f'{os.path.splitext(table_name)[0].split()[0]}.py'
+    processor_file = os.path.join(path, processor_filename)
+
     if os.path.isfile(processor_file) and file.endswith('_ddl.sql'):
         return True
     return False
@@ -80,12 +80,7 @@ def read_config(filename: str) -> Dict:
         return {}
 
 
-def unzip(list_of_tuples: List) -> Tuple[List, List]:
-    return [item[0] for item in list_of_tuples], [item[1] for item in
-                                                  list_of_tuples]
-
-
-def convert_interval_to_integer(interval: str) -> int:
+def convert_interval_to_integer(interval: str) -> Optional[int]:
     if interval is None:
         return None
     units = {'m': 1, 'h': 60, 'd': 1440, 'w': 10080}
@@ -96,24 +91,26 @@ def convert_interval_to_integer(interval: str) -> int:
     try:
         value = int(interval[:-1])
         return value * units[unit]
-    except:
+    except ValueError:
         raise ValueError('Invalid interval')
 
 
 def find_file_for_table(table: str, path: str, match: callable) -> str:
     folder, file = table.split('.')
-    files_inside = [file
-                    for file in
+    files_inside = [file for file in
                     glob.glob(os.path.join(path, folder, f'{file}*'))
                     if match(file)]
-    if len(files_inside) and os.path.isfile(files_inside[0]):
+
+    if files_inside and os.path.isfile(files_inside[0]):
         return files_inside[0]
+
     else:
         files_outside = [file for file in
                          glob.glob(os.path.join(path, table, '*'))
                          if match(file)]
-        if len(files_outside) and os.path.isfile(files_outside[0]):
+        if files_outside and os.path.isfile(files_outside[0]):
             return files_outside[0]
+
     return ''
 
 
@@ -130,3 +127,11 @@ def load_ddl_query(table: str, path: str) -> str:
 
 def load_query(table: str, path: str) -> str:
     return read_file(find_file_for_table(table, path, is_query))
+
+
+def find_tables_with_missing_files() -> Optional[str]:
+    # tests without select
+    # .py without select
+    # .py without ddl
+    # forbidden postfixes
+    pass

@@ -1,5 +1,6 @@
-import arrow
 from typing import List
+
+import arrow
 
 events = {
     'start': 'Started',
@@ -17,6 +18,8 @@ events = {
 }
 
 
+# pylint: disable=attribute-defined-outside-init
+# noinspection PyAttributeOutsideInit
 class Timestamps:
     __slots__ = list(events.keys()) + ['finish']
 
@@ -33,6 +36,7 @@ class Timestamps:
     def values(self) -> List:
         return [getattr(self, event, None) for event in self.__slots__]
 
+    # pylint: disable=no-member
     # noinspection PyUnresolvedReferences
     @property
     def duration(self) -> int:

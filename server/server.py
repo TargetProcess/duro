@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import arrow
 from flask import Flask, g, render_template, request, jsonify
@@ -44,6 +44,7 @@ def connect_db(use_rowfactory: bool = True):
     return rv
 
 
+# pylint: disable=unused-argument
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, '_database', None)
@@ -83,12 +84,19 @@ def jobs():
     db = get_db()
     floor = arrow.get(request.args.get('from')).timestamp
     ceiling = arrow.get(request.args.get('to')).timestamp
-    jobs = [{'table': job['table'],
-             'start': arrow.get(job['start']).format(),
-             'finish': arrow.get(job['finish']).format() if job['finish'] else None
-             }
-            for job in get_jobs(floor, ceiling, db)]
-    return jsonify(jobs)
+    jobs_dict = [format_job(job)
+                 for job in get_jobs(floor, ceiling, db)]
+    return jsonify(jobs_dict)
+
+
+def format_job(job) -> Dict:
+    table = job['table']
+    start = arrow.get(job['start']).format()
+    finish = arrow.get(job['finish']).format() if job['finish'] else None
+
+    return {'table': table,
+            'start': start,
+            'finish': finish}
 
 
 @app.route('/tables/<table>')
@@ -124,8 +132,8 @@ def register_update_request():
 @app.route('/api/stats')
 def stats():
     db = get_db(False)
-    stats = get_overview_stats(db, 24)
-    return jsonify(stats)
+    overview_stats = get_overview_stats(db, 24)
+    return jsonify(overview_stats)
 
 
 def start_server():

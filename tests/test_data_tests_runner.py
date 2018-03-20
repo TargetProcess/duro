@@ -24,6 +24,3 @@ from first.countries_temp
 where country = 'France';'''
 
     assert countries_test == load_tests('first.countries', views_path, logger)
-
-
-

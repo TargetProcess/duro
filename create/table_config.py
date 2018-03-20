@@ -26,5 +26,5 @@ def load_grant_select_statements(table: str, config: Dict) -> str:
     users = config.get('grant_select')
     if users is not None:
         return f'''GRANT SELECT ON {table}_temp TO {config['grant_select']}'''
-    else:
-        return ''
+
+    return ''

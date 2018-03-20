@@ -9,7 +9,7 @@ from create.sqlite import (load_info, is_running, reset_start,
                            get_average_completion_time, get_time_running,
                            set_waiting, is_waiting)
 from create.table import create_table
-from errors import (TableNotFoundInDBError, MaterializationError,
+from errors import (MaterializationError,
                     TableNotFoundInGraphError)
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
@@ -49,7 +49,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     except MaterializationError as e:
         tree_logger.error(e)
         reset_start(table.name, global_config.db_path)
-        send_slack_notification(str(e), f'Error while creating {e.table}')
+        send_slack_notification(str(e), f'Error while creating {table.name}')
 
 
 def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
@@ -65,7 +65,8 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
                       remaining_tables: int) -> bool:
     waiting, waiting_too_long = is_waiting(table.name, db_path)
     if waiting and not waiting_too_long:
-        logger.info(f'{table.name} is waiting for its children to be updated, won’t be updated now')
+        logger.info(
+            f'{table.name} is waiting for its children to be updated, won’t be updated now')
         return False
     if waiting_too_long:
         logger.info('Can’t be waiting for so long, resetting the flag')
@@ -95,8 +96,8 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
         remaining_tables -= 1
         logger.info(f'Tables remaining: {remaining_tables}')
         return False
-    else:
-        return True
+
+    return True
 
 
 def wait_till_finished(table: str, db: str, logger: Logger) -> bool:

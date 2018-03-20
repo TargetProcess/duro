@@ -1,12 +1,12 @@
 import json
 import sqlite3
+from typing import List, Tuple
 
 import arrow
 
 from create.timestamps import Timestamps
 from errors import TableNotFoundInDBError
 from utils.utils import Table
-from typing import List, Tuple
 
 
 def load_info(table: str, db: str) -> Table:
@@ -72,7 +72,7 @@ def reset_start(table: str, db: str):
     with sqlite3.connect(db) as connection:
         connection.execute(f'''UPDATE tables SET started = NULL
                         WHERE table_name = ?''',
-                           (table, ))
+                           (table,))
 
 
 def reset_all_starts(db: str):
@@ -102,8 +102,8 @@ def is_waiting(table: str, db: str) -> Tuple[bool, bool]:
     time_waiting = get_time_waiting(table, db)
     if time_waiting > 7200:
         return True, True
-    else:
-        return True, False
+
+    return True, False
 
 
 def is_running(table: str, db: str) -> bool:

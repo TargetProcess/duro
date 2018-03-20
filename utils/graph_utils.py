@@ -12,8 +12,8 @@ def find_sources(graph: nx.DiGraph) -> List[str]:
             in_degree == 0]
 
 
-def find_sources_without_attribute(graph: nx.DiGraph, attribute: str) -> List[
-    str]:
+def find_sources_without_attribute(graph: nx.DiGraph,
+                                   attribute: str) -> List[str]:
     roots = find_sources(graph)
     nodes = dict(graph.nodes(data=True))
     return [root for root in roots if not nodes[root].get(attribute)]

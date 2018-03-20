@@ -9,6 +9,7 @@ from utils.global_config import load_slack_config
 from utils.logger import setup_logger
 
 
+# pylint: disable=inconsistent-return-statements
 def delay_duplicates(timeout=10):
     def wrap(f):
         calls = defaultdict(lambda: dt.min)

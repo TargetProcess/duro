@@ -1,6 +1,6 @@
 from create.data_tests import run_tests, load_tests
 from create.process import process_and_upload_data
-from schedule.table_config import parse_table_config
+from scheduler.table_config import parse_table_config
 from create.redshift import (create_connection, drop_old_table,
                              replace_old_table, drop_temp_table,
                              create_temp_table)

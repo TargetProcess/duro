@@ -1,25 +1,18 @@
 import re
-from itertools import takewhile
 from logging import Logger
-from typing import List
 
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
                     SchedulerError)
 from notifications.slack import send_slack_notification
-from schedule.commits import get_previous_commit, get_all_commits
-from schedule.sqlite import save_to_db
-from utils.file_utils import list_view_files
+from scheduler.commits import get_all_commits, get_latest_new_commit
+from scheduler.sqlite import save_to_db
+from utils.file_utils import list_view_files, find_tables_with_missing_files
 from utils.global_config import load_global_config
 from utils.graph_utils import (find_roots_without_interval, detect_cycles,
                                copy_graph_without_attributes)
 from utils.logger import setup_logger
-
-
-def get_updated_views(commits: List, db: str) -> List[str]:
-    previous_commit = get_previous_commit(db)
-    return list(takewhile(lambda commit: commit != previous_commit, commits))
 
 
 def build_graph(folder: str) -> nx.DiGraph:
@@ -42,19 +35,21 @@ def draw_subgraphs(graph: nx.DiGraph):
         counter += 1
 
 
-def main(sql_path: str, db_path: str, logger: Logger,
+def main(views_path: str, db_path: str, logger: Logger,
          strict=False, use_git=False):
     latest_commit = None
+
     if use_git:
-        commits = get_all_commits(sql_path)
-        views = get_updated_views(commits, db_path)
-        latest_commit = commits[0] if len(commits) > 0 else None
-        if len(views) == 0:
+        commits = get_all_commits(views_path)
+        latest_commit = get_latest_new_commit(commits, db_path)
+        if latest_commit is None:
             logger.info('No new commits')
             return
 
-    graph = build_graph(sql_path)
-    logger.info(f'Built graph for {sql_path}')
+    tables_with_missing_files = find_tables_with_missing_files()
+
+    graph = build_graph(views_path)
+    logger.info(f'Built graph for {views_path}')
     if strict:
         valid, cycles = detect_cycles(graph)
     else:
@@ -69,7 +64,7 @@ def main(sql_path: str, db_path: str, logger: Logger,
         logger.error('Views dependency graph is not a DAG. Cycles detected:')
         for cycle in cycles:
             logger.error(sorted(cycle))
-        raise NotADAGError(f'Graph in {sql_path} is not a DAG.')
+        raise NotADAGError(f'Graph in {views_path} is not a DAG.')
 
     roots_without_interval = find_roots_without_interval(graph)
 
@@ -79,7 +74,7 @@ def main(sql_path: str, db_path: str, logger: Logger,
         logger.error(error)
         raise RootsWithoutIntervalError(error)
 
-    updated, new = save_to_db(graph, db_path, sql_path, latest_commit)
+    updated, new = save_to_db(graph, db_path, views_path, latest_commit)
     updates = (f'New tables: {", ".join(new)}. ' if new else '') \
         + (f'Updated tables: {", ".join(updated)}.' if updated else '')
 

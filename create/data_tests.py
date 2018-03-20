@@ -20,7 +20,7 @@ def load_tests(table: str, path: str, logger: Logger) -> str:
 
 
 def run_tests(tests_queries: str, connection, logger: Logger) -> Tuple[bool, Optional[List]]:
-    if len(tests_queries) == 0:
+    if not tests_queries:
         return True, None
 
     logger.info(f'Running tests')

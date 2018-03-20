@@ -41,8 +41,7 @@ scale_free = nx.DiGraph(
      (4, 14)]
 )
 
-graph = two_trees
-nx.nx_pydot.to_pydot(graph).write_png('graph-test.png')
+nx.nx_pydot.write_dot(two_cycles, 'graph.dot')
 
 
 def test_find_sources():

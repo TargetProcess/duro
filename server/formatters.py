@@ -1,12 +1,14 @@
-import arrow
 from typing import Dict, List
+
+import arrow
+
 from create.timestamps import events
 
 
 def print_log(log: Dict) -> List:
     result = [f'{format_as_ts(log["start"])}']
     prev_ts = log['start']
-    for key in events.keys():
+    for key in events:
         if log[key] is not None and key != 'start':
             next_ts = log[key]
             result.append(

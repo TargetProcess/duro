@@ -1,23 +1,21 @@
 import json
 import sqlite3
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, NamedTuple
 
 import arrow
 import networkx as nx
 
-from schedule.table_config import parse_table_config
+from scheduler.table_config import parse_table_config
+from utils.utils import Table
 
 
-def save_to_db(graph: nx.DiGraph, db_path: str, sql_path: str,
+def save_to_db(graph: nx.DiGraph, db_path: str, views_path: str,
                commit: str) -> Tuple:
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
 
-    nodes = dict(graph.nodes(data=True))
-    tables_and_queries = [(table, data['contents'],
-                           data['interval'],
-                           json.dumps(parse_table_config(table, sql_path)))
-                          for table, data in nodes.items()]
+    tables_and_queries = build_table_configs(graph, views_path)
+
     updates = save_tables(tables_and_queries, cursor)
     save_commit(commit, cursor)
     mark_deleted_tables(tables_and_queries, cursor)
@@ -27,19 +25,30 @@ def save_to_db(graph: nx.DiGraph, db_path: str, sql_path: str,
     return updates
 
 
-def save_tables(tables_and_queries: List[Tuple], cursor) -> Tuple[List, List]:
+def build_table_configs(graph: nx.DiGraph, views_path: str) -> List[Table]:
+    nodes = dict(graph.nodes(data=True))
+    return [Table(table,
+                  data['contents'],
+                  data['interval'],
+                  json.dumps(parse_table_config(table, views_path)))
+            for table, data in nodes.items()]
+
+
+def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:
     try:
         updated_tables = []
         new_tables = []
 
-        for table, query, interval, config in tables_and_queries:
-            if is_already_in_db(table, cursor):
-                updated = update_table(table, query, interval, config, cursor)
+        for table in tables_and_queries:
+            if is_already_in_db(table.name, cursor):
+                updated = update_table(table.name, table.query, table.interval,
+                                       table.config, cursor)
                 if updated:
                     updated_tables.append(updated)
             else:
-                insert_table(table, query, interval, config, cursor)
-                new_tables.append(table)
+                insert_table(table.name, table.query,
+                             table.interval, table.config, cursor)
+                new_tables.append(table.name)
 
         return updated_tables, new_tables
 
@@ -59,7 +68,7 @@ def is_already_in_db(table: str, cursor) -> bool:
 
 
 def insert_table(table: str, query: str, interval: int, config: str, cursor):
-    cursor.execute('''INSERT INTO tables 
+    cursor.execute('''INSERT INTO tables
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                    (table, query,
                     interval, config,
@@ -81,7 +90,7 @@ def should_be_updated(table: str, query: str, interval: int,
 def update_table(table: str, query: str, interval: int, config: str,
                  cursor) -> Optional[str]:
     if should_be_updated(table, query, interval, config, cursor):
-        cursor.execute('''UPDATE tables 
+        cursor.execute('''UPDATE tables
                         SET query = ?, 
                             interval = ?, 
                             config = ?, 
@@ -89,8 +98,8 @@ def update_table(table: str, query: str, interval: int, config: str,
                         WHERE table_name = ?''',
                        (query, interval, config, table))
         return table
-    else:
-        return None
+
+    return None
 
 
 def create_tables_table(cursor):
@@ -116,8 +125,8 @@ def save_commit(commit: str, cursor):
                 raise
 
 
-def mark_deleted_tables(tables_and_queries: List[Tuple], cursor):
-    tables = tuple(table for table, _, _, _ in tables_and_queries)
+def mark_deleted_tables(tables_and_queries: List[Table], cursor):
+    tables = tuple(table.name for table in tables_and_queries)
     cursor.execute(f'''UPDATE tables
                     SET deleted = strftime('%s', 'now')
                     WHERE table_name NOT IN {str(tables)}
