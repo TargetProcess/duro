@@ -1,15 +1,15 @@
+import argparse
+
 from create.data_tests import run_tests, load_tests
 from create.process import process_and_upload_data
-from scheduler.table_config import parse_table_config
 from create.redshift import (create_connection, drop_old_table,
                              replace_old_table, drop_temp_table,
                              create_temp_table)
 from create.timestamps import Timestamps
+from scheduler.table_config import parse_table_config
 from utils.file_utils import load_processor, load_query
 from utils.logger import setup_logger
 from utils.utils import Table
-
-import argparse
 
 
 def create_table(table: Table, views_path: str, verbose=False):
@@ -47,11 +47,12 @@ def create_table(table: Table, views_path: str, verbose=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('table', help='table to create', type=str)
-    parser.add_argument('--path', '-p', default='./views/', help='folder containing the views')
-    parser.add_argument('--verbose', '-v', default=False, help='Verbose', action='store_true')
+    parser.add_argument('--path', '-p', default='./views/',
+                        help='folder containing the views')
+    parser.add_argument('--verbose', '-v', default=False, help='Verbose',
+                        action='store_true')
     args = parser.parse_args()
     # noinspection PyArgumentList
     table = Table(args.table, load_query(args.table, args.path), None,
                   parse_table_config(args.table, args.path), None, None, None)
     create_table(table, args.path, args.verbose)
-

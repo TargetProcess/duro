@@ -5,17 +5,17 @@ from typing import Dict, List, Set
 from utils.file_utils import read_config
 
 
-def parse_table_config(full_table_name: str, path: str) -> Dict:
+def parse_table_config(full_table_name: str, views_path: str) -> Dict:
     schema, table = full_table_name.split('.')
 
-    global_config = read_config(os.path.join(path, 'global.conf'))
-    schema_config_outside = read_config(os.path.join(path, f'{schema}.conf'))
+    global_config = read_config(os.path.join(views_path, 'global.conf'))
+    schema_config_outside = read_config(os.path.join(views_path, f'{schema}.conf'))
     schema_config_inside = read_config(
-        os.path.join(path, schema, f'{schema}.conf'))
+        os.path.join(views_path, schema, f'{schema}.conf'))
     table_config_outside = read_config(
-        os.path.join(path, f'{schema}.{table}.conf'))
+        os.path.join(views_path, f'{schema}.{table}.conf'))
     table_config_inside = read_config(
-        os.path.join(path, schema, f'{table}.conf'))
+        os.path.join(views_path, schema, f'{table}.conf'))
 
     merged = {**global_config,
               **schema_config_outside, **schema_config_inside,

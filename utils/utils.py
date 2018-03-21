@@ -20,7 +20,9 @@ class Table:
         self.waiting = waiting
 
     def __repr__(self):
-        return f'Table({self.name}, {self.query}, {self.interval}, {self.config}, {self.last_created}, {self.force}, {self.waiting})'
+        return f'Table({self.name}, {self.query}, {self.interval}, ' \
+               f'{self.config}, {self.last_created}, {self.force}, ' \
+               f'{self.waiting})'
 
     def __str__(self):
         return f'{self.name} — {self.interval}'

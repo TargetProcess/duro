@@ -1,8 +1,6 @@
 import configparser
 from typing import NamedTuple, Union
 
-import sys
-
 import networkx as nx
 
 

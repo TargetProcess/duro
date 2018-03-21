@@ -1,5 +1,4 @@
 import sqlite3
-from itertools import takewhile
 from typing import List, Optional
 
 from git import Repo, InvalidGitRepositoryError

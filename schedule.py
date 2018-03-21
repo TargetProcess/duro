@@ -1,5 +1,3 @@
-from logging import Logger
-
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
@@ -15,8 +13,10 @@ from utils.graph_utils import (find_roots_without_interval, detect_cycles,
 from utils.logger import setup_logger
 
 
-def main(views_path: str, db_path: str, logger: Logger,
-         strict=False, use_git=False):
+logger = setup_logger('scheduler')
+
+
+def main(views_path: str, db_path: str, strict=False, use_git=False):
     latest_commit = None
 
     if use_git:
@@ -38,7 +38,6 @@ def main(views_path: str, db_path: str, logger: Logger,
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ['contents', 'interval']),
         'dependencies.dot')
-    nx.nx_pydot.write_dot(graph, 'graph_with_queries.dot')
     logger.info(f'Saved graph to file')
 
     if strict and not valid:
@@ -51,7 +50,7 @@ def main(views_path: str, db_path: str, logger: Logger,
 
     if roots_without_interval:
         error = f'Some roots don’t have an interval specified. ' \
-                f'These roots are: {", ".join(roots_without_interval)}',
+                f'These roots are: {", ".join(roots_without_interval)}'
         logger.error(error)
         raise RootsWithoutIntervalError(error)
 
@@ -70,12 +69,10 @@ def main(views_path: str, db_path: str, logger: Logger,
 
 
 if __name__ == '__main__':
-    logger = setup_logger('scheduler')
     global_config = load_global_config()
     try:
         main(global_config.views_path,
              global_config.db_path,
-             logger,
              strict=False, use_git=False)
     except SchedulerError as e:
         send_slack_notification(str(e), 'Scheduler error')
