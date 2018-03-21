@@ -5,7 +5,7 @@ from typing import Dict, List, Set
 from utils.file_utils import read_config
 
 
-def parse_table_config(full_table_name: str, path: str) -> str:
+def parse_table_config(full_table_name: str, path: str) -> Dict:
     schema, table = full_table_name.split('.')
 
     global_config = read_config(os.path.join(path, 'global.conf'))

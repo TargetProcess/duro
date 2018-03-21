@@ -1,38 +1,18 @@
-import re
 from logging import Logger
 
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
                     SchedulerError)
+from scheduler.graph import build_graph
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
 from scheduler.sqlite import save_to_db
-from utils.file_utils import list_view_files, find_tables_with_missing_files
+from utils.file_utils import find_tables_with_missing_files
 from utils.global_config import load_global_config
 from utils.graph_utils import (find_roots_without_interval, detect_cycles,
                                copy_graph_without_attributes)
 from utils.logger import setup_logger
-
-
-def build_graph(folder: str) -> nx.DiGraph:
-    graph = nx.DiGraph()
-    graph.add_nodes_from(list_view_files(folder))
-    nodes_list = graph.nodes()
-    for node, query in graph.nodes_iter(data=True):
-        for other_node in nodes_list:
-            if re.search(r'\b' + re.escape(other_node) + r'\b',
-                         query.get('contents')):
-                graph.add_edge(node, other_node)
-    return graph
-
-
-def draw_subgraphs(graph: nx.DiGraph):
-    subgraphs = nx.weakly_connected_component_subgraphs(graph)
-    counter = 1
-    for subgraph in subgraphs:
-        nx.nx_pydot.to_pydot(subgraph).write_png(f'graph{counter}.png')
-        counter += 1
 
 
 def main(views_path: str, db_path: str, logger: Logger,
@@ -58,6 +38,7 @@ def main(views_path: str, db_path: str, logger: Logger,
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ['contents', 'interval']),
         'dependencies.dot')
+    nx.nx_pydot.write_dot(graph, 'graph_with_queries.dot')
     logger.info(f'Saved graph to file')
 
     if strict and not valid:

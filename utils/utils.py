@@ -18,3 +18,9 @@ class Table:
         self.last_created = last_created
         self.force = force
         self.waiting = waiting
+
+    def __repr__(self):
+        return f'Table({self.name}, {self.query}, {self.interval}, {self.config}, {self.last_created}, {self.force}, {self.waiting})'
+
+    def __str__(self):
+        return f'{self.name} — {self.interval}'

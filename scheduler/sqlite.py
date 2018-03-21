@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from typing import List, Tuple, Optional, NamedTuple
+from typing import List, Tuple, Optional
 
 import arrow
 import networkx as nx
@@ -30,7 +30,7 @@ def build_table_configs(graph: nx.DiGraph, views_path: str) -> List[Table]:
     return [Table(table,
                   data['contents'],
                   data['interval'],
-                  json.dumps(parse_table_config(table, views_path)))
+                  parse_table_config(table, views_path))
             for table, data in nodes.items()]
 
 
@@ -42,12 +42,12 @@ def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:
         for table in tables_and_queries:
             if is_already_in_db(table.name, cursor):
                 updated = update_table(table.name, table.query, table.interval,
-                                       table.config, cursor)
+                                       json.dumps(table.config), cursor)
                 if updated:
                     updated_tables.append(updated)
             else:
-                insert_table(table.name, table.query,
-                             table.interval, table.config, cursor)
+                insert_table(table.name, table.query, table.interval,
+                             json.dumps(table.config), cursor)
                 new_tables.append(table.name)
 
         return updated_tables, new_tables
