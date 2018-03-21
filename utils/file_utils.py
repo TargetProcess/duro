@@ -28,11 +28,10 @@ def parse_filename(filename: str) -> Tuple:
 def parse_view(filename: str, path: str) -> ViewFile:
     table, interval = parse_filename(filename.replace(f'{path}/', '', 1))
 
-    # noinspection PyArgumentList
     return ViewFile(filename, table, interval, read_file(filename))
 
 
-def list_view_files(path: str) -> List[Tuple[str, dict]]:
+def list_view_files(path: str) -> List[Tuple[str, Dict]]:
     views = [parse_view(file, path)
              for file in glob.glob(path + '/**/*.sql', recursive=True)
              if is_query(file)]
@@ -42,15 +41,18 @@ def list_view_files(path: str) -> List[Tuple[str, dict]]:
             for view in views]
 
 
-def is_query(file: str) -> bool:
-    return (file.endswith('.sql')
-            and not file.endswith('_test.sql')
-            and not is_processor_ddl(file)
-            and os.path.isfile(file))
+def is_query(filename: str) -> bool:
+    if not filename:
+        return False
+
+    return (filename.endswith('.sql')
+            and not filename.endswith('_test.sql')
+            and not is_processor_ddl(filename)
+            and os.path.isfile(filename))
 
 
 def is_processor_ddl(filename: str) -> bool:
-    if '_ddl' not in filename:
+    if not filename or '_ddl' not in filename:
         return False
     path = os.path.dirname(filename)
     file = os.path.basename(filename)
@@ -64,8 +66,11 @@ def is_processor_ddl(filename: str) -> bool:
 
 
 def read_file(filename: str) -> str:
-    with open(filename) as file:
-        return "\n".join(line.strip() for line in file)
+    try:
+        with open(filename) as file:
+            return "\n".join(line.strip() for line in file)
+    except FileNotFoundError:
+        raise ValueError(f'{filename} not found')
 
 
 @lru_cache()
@@ -80,7 +85,7 @@ def read_config(filename: str) -> Dict:
         return {}
 
 
-def convert_interval_to_integer(interval: str) -> Optional[int]:
+def convert_interval_to_integer(interval: Optional[str]) -> Optional[int]:
     if interval is None:
         return None
     units = {'m': 1, 'h': 60, 'd': 1440, 'w': 10080}
@@ -95,10 +100,10 @@ def convert_interval_to_integer(interval: str) -> Optional[int]:
         raise ValueError('Invalid interval')
 
 
-def find_file_for_table(table: str, path: str, match: callable) -> str:
+def find_file_for_table(table: str, views_path: str, match: callable) -> str:
     folder, file = table.split('.')
     files_inside = [file for file in
-                    glob.glob(os.path.join(path, folder, f'{file}*'))
+                    glob.glob(os.path.join(views_path, folder, f'{file}*'))
                     if match(file)]
 
     if files_inside and os.path.isfile(files_inside[0]):
@@ -106,7 +111,7 @@ def find_file_for_table(table: str, path: str, match: callable) -> str:
 
     else:
         files_outside = [file for file in
-                         glob.glob(os.path.join(path, table, '*'))
+                         glob.glob(os.path.join(views_path, table, '*'))
                          if match(file)]
         if files_outside and os.path.isfile(files_outside[0]):
             return files_outside[0]
@@ -114,19 +119,19 @@ def find_file_for_table(table: str, path: str, match: callable) -> str:
     return ''
 
 
-def load_processor(table: str, path: str) -> str:
-    return find_file_for_table(table, path, lambda s: s.endswith('.py'))
+def load_processor(table: str, views_path: str) -> str:
+    return find_file_for_table(table, views_path, lambda s: s.endswith('.py'))
 
 
-def load_ddl_query(table: str, path: str) -> str:
+def load_ddl_query(table: str, views_path: str) -> str:
     query = read_file(
-        find_file_for_table(table, path, lambda s: s.endswith('_ddl.sql')))
+        find_file_for_table(table, views_path, lambda s: s.endswith('_ddl.sql')))
     return query.lower().replace(f'create table {table}',
                                  f'create table {table}_temp')
 
 
-def load_query(table: str, path: str) -> str:
-    return read_file(find_file_for_table(table, path, is_query))
+def load_query(table: str, views_path: str) -> str:
+    return read_file(find_file_for_table(table, views_path, is_query))
 
 
 def find_tables_with_missing_files() -> Optional[str]:

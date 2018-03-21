@@ -70,7 +70,3 @@ def full_config():
 def partial_config():
     return 'configs/partial_config.conf'
 
-
-@pytest.fixture
-def graph():
-    return nx.nx_pydot.read_dot(os.path.join(VIEWS_PATH, 'graph.dot'))

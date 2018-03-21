@@ -53,7 +53,7 @@ def test_build_table_configs(views_path):
                      if t.name == 'second.parent'][0]
     assert second_parent.query == 'select * from second.child limit 10'
     assert second_parent.interval == 24
-    assert second_parent.config == {}
+    assert second_parent.config == {'diststyle': 'even'}
 
     second_child = [t for t in configs
                     if t.name == 'second.child'][0]

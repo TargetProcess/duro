@@ -41,8 +41,6 @@ scale_free = nx.DiGraph(
      (4, 14)]
 )
 
-nx.nx_pydot.write_dot(two_cycles, 'graph.dot')
-
 
 def test_find_sources():
     assert find_sources(no_sources) == []
