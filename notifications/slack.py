@@ -12,7 +12,7 @@ from utils.logger import setup_logger
 
 
 # pylint: disable=inconsistent-return-statements
-def delay_duplicates(timeout=10):
+def delay_duplicates(timeout=10*60):
     def wrap(f):
         calls = defaultdict(lambda: dt.min)
 
@@ -22,7 +22,7 @@ def delay_duplicates(timeout=10):
                           for arg in args + tuple(kwargs.values()))
             previous_call = calls[key]
             now = dt.now()
-            if now - previous_call >= timedelta(minutes=timeout):
+            if now - previous_call >= timedelta(seconds=timeout):
                 calls[key] = now
                 return f(*args, **kwargs)
         return wrapper

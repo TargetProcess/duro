@@ -1,4 +1,4 @@
-import pytest
+from time import sleep
 
 from notifications.slack import (choose_channel_and_emoji, build_message,
                                  delay_duplicates)
@@ -20,7 +20,8 @@ def test_choose_channel_and_emoji(full_config):
     assert channel == 'failure'
     assert emoji == ':scream_cat:'
 
-    channel, emoji = choose_channel_and_emoji(full_slack_config, 'something else')
+    channel, emoji = choose_channel_and_emoji(full_slack_config,
+                                              'something else')
     assert channel == 'failure'
     assert emoji == ':scream_cat:'
 
@@ -50,3 +51,20 @@ def test_build_message(full_config):
     assert message_dict['icon_emoji'] == ':scream_cat:'
     assert message_dict['username'] == 'Duro notification'
 
+
+def test_delay_duplicates():
+    @delay_duplicates(1)
+    def one():
+        return 1
+
+    no_sleep = []
+    for _ in range(5):
+        no_sleep.append(one())
+    assert no_sleep == [1, None, None, None, None]
+
+    with_sleep = []
+    for _ in range(5):
+        sleep(1.1)
+        with_sleep.append(one())
+
+    assert with_sleep == [1, 1, 1, 1, 1]
