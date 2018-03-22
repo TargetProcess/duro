@@ -6,8 +6,12 @@ from errors import GitError
 from scheduler.commits import (get_all_commits, get_previous_commit,
                                get_latest_new_commit)
 from scheduler.graph import build_graph
-from scheduler.sqlite import save_commit, build_table_configs
+from scheduler.sqlite import (save_commit, build_table_configs,
+                              is_already_in_db, insert_table,
+                              update_table, create_tables_table,
+                              should_be_updated)
 from scheduler.table_config import parse_permissions, parse_table_config
+from utils.utils import Table
 
 
 def test_get_all_commits(empty_git, non_empty_git):
@@ -103,3 +107,100 @@ def test_parse_table_config(views_path):
     assert fco_config.get('distkey') is None
     assert fco_config.get('diststyle') is None
     assert fco_config.get('grant_select') == 'joan, john'
+
+
+def test_create_tables_table(db_cursor):
+    create_tables_table(db_cursor)
+
+    db_cursor.execute('''
+        select count(*) from sqlite_master 
+        where type='table'
+        and name = 'tables';
+    ''')
+
+    assert db_cursor.fetchone()[0] == 1
+    db_cursor.execute('select * from tables')
+
+
+def test_is_already_in_db(db_cursor):
+    assert is_already_in_db('first.cities', db_cursor) is False
+
+    create_tables_table(db_cursor)
+    db_cursor.execute('''
+        INSERT INTO tables
+        (table_name) 
+        values ('first.coutries');
+    ''')
+    assert is_already_in_db('first.cities', db_cursor) is False
+
+    db_cursor.execute('''
+        INSERT INTO tables
+        (table_name) 
+        values ('first.cities');
+    ''')
+    assert is_already_in_db('first.cities', db_cursor) is True
+
+
+def test_insert_table(db_cursor, views_path):
+    create_tables_table(db_cursor)
+
+    sample_table = Table('schema.table', 'select', 40)
+    insert_table(sample_table, db_cursor)
+
+    assert is_already_in_db('schema.table', db_cursor) is True
+    row = db_cursor.execute('select * from tables').fetchone()
+    assert row[0] == 'schema.table'
+    assert row[1] == 'select'
+    assert row[2] == 40
+    assert row[3] is None
+    assert row[7] == 1
+
+    graph_with_queries = build_graph(views_path)
+    configs = build_table_configs(graph_with_queries, views_path)
+    second_parent = [t for t in configs
+                     if t.name == 'second.parent'][0]
+    insert_table(second_parent, db_cursor)
+
+    assert is_already_in_db('second.parent', db_cursor) is True
+    row = db_cursor.execute('''
+        select * from tables 
+        where table_name = 'second.parent'
+    ''').fetchone()
+    assert row[0] == 'second.parent'
+    assert row[1] == 'select * from second.child limit 10'
+    assert row[2] == 24
+    assert row[3] == '{"diststyle": "even"}'
+    assert row[7] == 1
+
+
+def test_should_be_updated(db_cursor):
+    create_tables_table(db_cursor)
+    table = Table('schema.table', 'select', 40, {'key': 'value'})
+    assert should_be_updated(table, db_cursor) is True
+
+    insert_table(table, db_cursor)
+
+    assert should_be_updated(table, db_cursor) is False
+
+    table.interval = 20
+    assert should_be_updated(table, db_cursor) is True
+
+    table.interval = 40
+    table.name = 'new name'
+    assert should_be_updated(table, db_cursor) is True
+
+
+def test_update_table(db_cursor):
+    create_tables_table(db_cursor)
+    table = Table('schema.table', 'select', 40, {'key': 'value'})
+    insert_table(table, db_cursor)
+
+    assert update_table(table, db_cursor) is None
+
+    table.interval = 20
+    assert update_table(table, db_cursor) == 'schema.table'
+    row = db_cursor.execute('select * from tables').fetchone()
+    assert row[0] == 'schema.table'
+    assert row[1] == 'select'
+    assert row[2] == 20
+    assert row[7] == 1

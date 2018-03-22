@@ -24,7 +24,10 @@ def logger():
 @pytest.fixture
 def db_str() -> str:
     yield DB_PATH
-    os.remove(DB_PATH)
+    try:
+        os.remove(DB_PATH)
+    except FileNotFoundError:
+        pass
 
 
 @pytest.fixture
@@ -32,6 +35,10 @@ def db_cursor():
     connection = sqlite3.connect(DB_PATH, isolation_level=None)
     yield connection.cursor()
     connection.close()
+    try:
+        os.remove(DB_PATH)
+    except FileNotFoundError:
+        pass
 
 
 @pytest.fixture

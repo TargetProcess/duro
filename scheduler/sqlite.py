@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 import arrow
 import networkx as nx
@@ -41,13 +41,11 @@ def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:
 
         for table in tables_and_queries:
             if is_already_in_db(table.name, cursor):
-                updated = update_table(table.name, table.query, table.interval,
-                                       json.dumps(table.config), cursor)
+                updated = update_table(table, cursor)
                 if updated:
                     updated_tables.append(updated)
             else:
-                insert_table(table.name, table.query, table.interval,
-                             json.dumps(table.config), cursor)
+                insert_table(table, cursor)
                 new_tables.append(table.name)
 
         return updated_tables, new_tables
@@ -61,43 +59,48 @@ def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:
 
 
 def is_already_in_db(table: str, cursor) -> bool:
-    return cursor.execute('''SELECT table_name
-                    FROM tables
-                    WHERE table_name = ?
-                    ''', (table,)).fetchone() is not None
+    try:
+        return cursor.execute('''SELECT table_name
+                        FROM tables
+                        WHERE table_name = ?
+                        ''', (table,)).fetchone() is not None
+    except sqlite3.OperationalError as e:
+        if 'no such table' in str(e):
+            return False
+        else:
+            raise
 
 
-def insert_table(table: str, query: str, interval: int, config: str, cursor):
+def insert_table(table: Table, cursor):
     cursor.execute('''INSERT INTO tables
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                   (table, query,
-                    interval, config,
+                   (table.name, table.query,
+                    table.interval, table.config_json,
                     None, 0, 0,
                     1, None, None, None))
 
 
-def should_be_updated(table: str, query: str, interval: int,
-                      config: str, cursor) -> bool:
+def should_be_updated(table: Table, cursor) -> bool:
     cursor.execute('''SELECT query, interval, config
                     FROM tables
-                    WHERE table_name = ?''', (table,))
+                    WHERE table_name = ?''', (table.name,))
     current = cursor.fetchone()
-    if current != (query, interval, config):
+    if current != (table.query, table.interval, table.config_json):
         return True
     return False
 
 
-def update_table(table: str, query: str, interval: int, config: str,
-                 cursor) -> Optional[str]:
-    if should_be_updated(table, query, interval, config, cursor):
+def update_table(table: Table, cursor) -> Optional[str]:
+    if should_be_updated(table, cursor):
         cursor.execute('''UPDATE tables
                         SET query = ?, 
                             interval = ?, 
                             config = ?, 
                             force = 1
                         WHERE table_name = ?''',
-                       (query, interval, config, table))
-        return table
+                       (table.query, table.interval,
+                        table.config_json, table.name))
+        return table.name
 
     return None
 
