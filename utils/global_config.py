@@ -1,5 +1,5 @@
 import configparser
-from typing import NamedTuple, Union
+from typing import NamedTuple, Optional
 
 import networkx as nx
 
@@ -34,10 +34,11 @@ def load_global_config(config_file='config.conf') -> GlobalConfig:
         # noinspection PyArgumentList
         return GlobalConfig(db_path, views_path, logs_path, graph)
     except (configparser.NoSectionError, KeyError):
-        raise ValueError('No ’main’ section in config.conf (or maybe file doesn’t exist at all)')
+        raise ValueError(
+            'No ’main’ section in config.conf (or maybe file doesn’t exist at all)')
 
 
-def load_slack_config(config_file='config.conf') -> Union[SlackConfig, None]:
+def load_slack_config(config_file='config.conf') -> Optional[SlackConfig]:
     try:
         config = configparser.ConfigParser()
         config.read(config_file)
