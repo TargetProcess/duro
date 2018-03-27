@@ -9,7 +9,7 @@ from scheduler.graph import build_graph
 from scheduler.sqlite import (save_commit, build_table_configs,
                               is_already_in_db, insert_table,
                               update_table, create_tables_table,
-                              should_be_updated)
+                              should_be_updated, save_to_db)
 from scheduler.table_config import parse_permissions, parse_table_config
 from utils.utils import Table
 
@@ -204,3 +204,44 @@ def test_update_table(db_cursor):
     assert row[1] == 'select'
     assert row[2] == 20
     assert row[7] == 1
+
+
+def test_save_to_db(db_str, views_path, db_cursor):
+    graph = build_graph(views_path)
+    save_to_db(graph, db_str, views_path, None)
+    db_cursor.execute('''select * from tables 
+                where table_name = 'second.parent'
+                ''')
+    second_parent = db_cursor.fetchone()
+    assert second_parent[0] == 'second.parent'
+    assert second_parent[1] == 'select * from second.child limit 10'
+    assert second_parent[2] == 24
+    assert second_parent[3] == '{"diststyle": "even"}'
+    assert second_parent[7] == 1
+
+    graph.add_node('schema.table', {'contents': 'select', 'interval': 40})
+    save_to_db(graph, db_str, views_path, None)
+    db_cursor.execute('''select * from tables 
+                    where table_name = 'schema.table'
+                    ''')
+    table = db_cursor.fetchone()
+    assert table[0] == 'schema.table'
+    assert table[1] == 'select'
+    assert table[2] == 40
+    assert table[3] is None
+
+    db_cursor.execute('select count(*) from tables')
+    assert db_cursor.fetchone()[0] == 5
+
+    save_to_db(graph, db_str, views_path, 'commit_hash')
+    db_cursor.execute('select * from commits')
+    commit = db_cursor.fetchone()
+    assert commit[0] == 'commit_hash'
+
+    graph.remove_node('schema.table')
+    save_to_db(graph, db_str, views_path, 'commit_hash')
+    db_cursor.execute('''select count(*) from tables 
+                        where table_name = 'schema.table'
+                        and deleted is not null
+                        ''')
+    assert db_cursor.fetchone()[0] == 1

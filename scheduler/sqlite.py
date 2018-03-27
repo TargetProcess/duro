@@ -1,6 +1,5 @@
-import json
 import sqlite3
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional
 
 import arrow
 import networkx as nx
@@ -10,7 +9,7 @@ from utils.utils import Table
 
 
 def save_to_db(graph: nx.DiGraph, db_path: str, views_path: str,
-               commit: str) -> Tuple:
+               commit: Optional[str]) -> Tuple:
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
 
