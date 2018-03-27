@@ -21,16 +21,16 @@ def test_get_all_commits(empty_git, non_empty_git):
         get_all_commits('.')
 
 
-def test_save_and_read_commit(db_str, db_cursor):
+def test_save_and_read_commit(db_str, empty_db_cursor):
     commits = ['063fac57a03eadfd5077e2c972504426916769ab',
                '92012fc409ee64934fc10c8cea54ce9ef6e2114b']
     assert get_latest_new_commit(commits, db_str) == commits[0]
-    save_commit(commits[1], db_cursor)
+    save_commit(commits[1], empty_db_cursor)
     commit = get_previous_commit(db_str)
     assert commit == commits[1]
     sleep(1)
     assert get_latest_new_commit(commits, db_str) == commits[0]
-    save_commit(commits[0], db_cursor)
+    save_commit(commits[0], empty_db_cursor)
     commit = get_previous_commit(db_str)
     assert commit == commits[0]
     assert get_latest_new_commit(commits, db_str) is None
@@ -109,46 +109,46 @@ def test_parse_table_config(views_path):
     assert fco_config.get('grant_select') == 'joan, john'
 
 
-def test_create_tables_table(db_cursor):
-    create_tables_table(db_cursor)
+def test_create_tables_table(empty_db_cursor):
+    create_tables_table(empty_db_cursor)
 
-    db_cursor.execute('''
+    empty_db_cursor.execute('''
         select count(*) from sqlite_master 
         where type='table'
         and name = 'tables';
     ''')
 
-    assert db_cursor.fetchone()[0] == 1
-    db_cursor.execute('select * from tables')
+    assert empty_db_cursor.fetchone()[0] == 1
+    empty_db_cursor.execute('select * from tables')
 
 
-def test_is_already_in_db(db_cursor):
-    assert is_already_in_db('first.cities', db_cursor) is False
+def test_is_already_in_db(empty_db_cursor):
+    assert is_already_in_db('first.cities', empty_db_cursor) is False
 
-    create_tables_table(db_cursor)
-    db_cursor.execute('''
+    create_tables_table(empty_db_cursor)
+    empty_db_cursor.execute('''
         INSERT INTO tables
         (table_name) 
         values ('first.coutries');
     ''')
-    assert is_already_in_db('first.cities', db_cursor) is False
+    assert is_already_in_db('first.cities', empty_db_cursor) is False
 
-    db_cursor.execute('''
+    empty_db_cursor.execute('''
         INSERT INTO tables
         (table_name) 
         values ('first.cities');
     ''')
-    assert is_already_in_db('first.cities', db_cursor) is True
+    assert is_already_in_db('first.cities', empty_db_cursor) is True
 
 
-def test_insert_table(db_cursor, views_path):
-    create_tables_table(db_cursor)
+def test_insert_table(empty_db_cursor, views_path):
+    create_tables_table(empty_db_cursor)
 
     sample_table = Table('schema.table', 'select', 40)
-    insert_table(sample_table, db_cursor)
+    insert_table(sample_table, empty_db_cursor)
 
-    assert is_already_in_db('schema.table', db_cursor) is True
-    row = db_cursor.execute('select * from tables').fetchone()
+    assert is_already_in_db('schema.table', empty_db_cursor) is True
+    row = empty_db_cursor.execute('select * from tables').fetchone()
     assert row[0] == 'schema.table'
     assert row[1] == 'select'
     assert row[2] == 40
@@ -159,10 +159,10 @@ def test_insert_table(db_cursor, views_path):
     configs = build_table_configs(graph_with_queries, views_path)
     second_parent = [t for t in configs
                      if t.name == 'second.parent'][0]
-    insert_table(second_parent, db_cursor)
+    insert_table(second_parent, empty_db_cursor)
 
-    assert is_already_in_db('second.parent', db_cursor) is True
-    row = db_cursor.execute('''
+    assert is_already_in_db('second.parent', empty_db_cursor) is True
+    row = empty_db_cursor.execute('''
         select * from tables 
         where table_name = 'second.parent'
     ''').fetchone()
@@ -173,46 +173,46 @@ def test_insert_table(db_cursor, views_path):
     assert row[7] == 1
 
 
-def test_should_be_updated(db_cursor):
-    create_tables_table(db_cursor)
+def test_should_be_updated(empty_db_cursor):
+    create_tables_table(empty_db_cursor)
     table = Table('schema.table', 'select', 40, {'key': 'value'})
-    assert should_be_updated(table, db_cursor) is True
+    assert should_be_updated(table, empty_db_cursor) is True
 
-    insert_table(table, db_cursor)
+    insert_table(table, empty_db_cursor)
 
-    assert should_be_updated(table, db_cursor) is False
+    assert should_be_updated(table, empty_db_cursor) is False
 
     table.interval = 20
-    assert should_be_updated(table, db_cursor) is True
+    assert should_be_updated(table, empty_db_cursor) is True
 
     table.interval = 40
     table.name = 'new name'
-    assert should_be_updated(table, db_cursor) is True
+    assert should_be_updated(table, empty_db_cursor) is True
 
 
-def test_update_table(db_cursor):
-    create_tables_table(db_cursor)
+def test_update_table(empty_db_cursor):
+    create_tables_table(empty_db_cursor)
     table = Table('schema.table', 'select', 40, {'key': 'value'})
-    insert_table(table, db_cursor)
+    insert_table(table, empty_db_cursor)
 
-    assert update_table(table, db_cursor) is None
+    assert update_table(table, empty_db_cursor) is None
 
     table.interval = 20
-    assert update_table(table, db_cursor) == 'schema.table'
-    row = db_cursor.execute('select * from tables').fetchone()
+    assert update_table(table, empty_db_cursor) == 'schema.table'
+    row = empty_db_cursor.execute('select * from tables').fetchone()
     assert row[0] == 'schema.table'
     assert row[1] == 'select'
     assert row[2] == 20
     assert row[7] == 1
 
 
-def test_save_to_db(db_str, views_path, db_cursor):
+def test_save_to_db(db_str, views_path, empty_db_cursor):
     graph = build_graph(views_path)
     save_to_db(graph, db_str, views_path, None)
-    db_cursor.execute('''select * from tables 
+    empty_db_cursor.execute('''select * from tables 
                 where table_name = 'second.parent'
                 ''')
-    second_parent = db_cursor.fetchone()
+    second_parent = empty_db_cursor.fetchone()
     assert second_parent[0] == 'second.parent'
     assert second_parent[1] == 'select * from second.child limit 10'
     assert second_parent[2] == 24
@@ -221,27 +221,27 @@ def test_save_to_db(db_str, views_path, db_cursor):
 
     graph.add_node('schema.table', {'contents': 'select', 'interval': 40})
     save_to_db(graph, db_str, views_path, None)
-    db_cursor.execute('''select * from tables 
+    empty_db_cursor.execute('''select * from tables 
                     where table_name = 'schema.table'
                     ''')
-    table = db_cursor.fetchone()
+    table = empty_db_cursor.fetchone()
     assert table[0] == 'schema.table'
     assert table[1] == 'select'
     assert table[2] == 40
     assert table[3] is None
 
-    db_cursor.execute('select count(*) from tables')
-    assert db_cursor.fetchone()[0] == 5
+    empty_db_cursor.execute('select count(*) from tables')
+    assert empty_db_cursor.fetchone()[0] == 5
 
     save_to_db(graph, db_str, views_path, 'commit_hash')
-    db_cursor.execute('select * from commits')
-    commit = db_cursor.fetchone()
+    empty_db_cursor.execute('select * from commits')
+    commit = empty_db_cursor.fetchone()
     assert commit[0] == 'commit_hash'
 
     graph.remove_node('schema.table')
     save_to_db(graph, db_str, views_path, 'commit_hash')
-    db_cursor.execute('''select count(*) from tables 
+    empty_db_cursor.execute('''select count(*) from tables 
                         where table_name = 'schema.table'
                         and deleted is not null
                         ''')
-    assert db_cursor.fetchone()[0] == 1
+    assert empty_db_cursor.fetchone()[0] == 1

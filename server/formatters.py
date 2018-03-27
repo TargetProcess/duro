@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import arrow
 
@@ -86,3 +86,21 @@ def format_average_time(num: Optional[float]) -> str:
 
 def skip_none(text: Optional[str]) -> str:
     return text if text is not None else ''
+
+
+def format_job(job) -> Dict:
+    start = arrow.get(job['start']).format()
+    finish = arrow.get(job['finish']).format() if job['finish'] else None
+
+    return {'table': job['table'],
+            'start': start,
+            'finish': finish}
+
+
+def prepare_table_details(details: List) -> Tuple[List, List]:
+    if len(details) == 1 and details[0]['start'] is None:
+        return [], []
+    return ([print_log(d) for d in details],
+            [{'date': arrow.get(d['start']).format(),
+              'duration': d['finish'] - d['start']}
+             for d in details])

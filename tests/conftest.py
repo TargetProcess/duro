@@ -4,11 +4,17 @@ import sqlite3
 
 import logzero
 import pytest
-import networkx as nx
+from shutil import copyfile
 from git import Repo
 
 DB_PATH = './test.db'
+PREPARED_DB_PATH = './test_data.db'
 VIEWS_PATH = './views'
+
+
+def copy_db(source, target='./copy.db') -> str:
+    copyfile(source, target)
+    return target
 
 
 @pytest.fixture
@@ -31,12 +37,25 @@ def db_str() -> str:
 
 
 @pytest.fixture
-def db_cursor():
+def empty_db_cursor():
     connection = sqlite3.connect(DB_PATH, isolation_level=None)
     yield connection.cursor()
     connection.close()
     try:
         os.remove(DB_PATH)
+    except FileNotFoundError:
+        pass
+
+
+@pytest.fixture
+def db_cursor():
+    db = copy_db(PREPARED_DB_PATH)
+    connection = sqlite3.connect(db, isolation_level=None)
+    connection.row_factory = sqlite3.Row
+    yield connection.cursor()
+    connection.close()
+    try:
+        os.remove(db)
     except FileNotFoundError:
         pass
 

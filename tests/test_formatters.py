@@ -5,7 +5,7 @@ from server.formatters import (print_log, format_as_human_date,
                                format_as_short_ts, format_delta,
                                format_seconds, format_interval,
                                format_average_time, skip_none,
-                               format_minutes)
+                               format_minutes, format_job)
 
 
 def test_print_log():
@@ -104,3 +104,17 @@ def test_skip_none():
     assert skip_none('text') == 'text'
     assert skip_none('') == ''
     assert skip_none(None) == ''
+
+
+def test_format_job():
+    job = {
+        'table': 'schema.table',
+        'start': 1522151698,
+        'finish': 1522151865
+    }
+    formatted = format_job(job)
+    assert formatted == {
+        'table': 'schema.table',
+        'start': '2018-03-27 11:54:58+00:00',
+        'finish': '2018-03-27 11:57:45+00:00'
+    }

@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import Dict, Tuple
+from sqlite3 import Row
 
 from networkx import DiGraph
 
@@ -17,7 +18,7 @@ def get_all_tables(db):
             ''').fetchall()
 
 
-def get_jobs(floor: int, ceiling: int, db):
+def get_jobs(floor: int, ceiling: int, db) -> Tuple[Row]:
     return db.execute('''
                     SELECT "table", 
                         "start",

@@ -1,5 +1,4 @@
 import sqlite3
-from typing import List, Tuple, Dict
 
 import arrow
 from flask import Flask, g, render_template, request, jsonify
@@ -7,7 +6,8 @@ from flask import Flask, g, render_template, request, jsonify
 from create.sqlite import is_running
 from server.formatters import (format_average_time, format_as_human_date,
                                format_as_date, format_interval,
-                               print_log, skip_none)
+                               skip_none, format_job,
+                               prepare_table_details)
 from server.sqlite import (get_all_tables, get_jobs, get_table_details,
                            set_table_for_update, get_overview_stats)
 from utils.global_config import load_global_config
@@ -89,16 +89,6 @@ def jobs():
     return jsonify(jobs_dict)
 
 
-def format_job(job) -> Dict:
-    table = job['table']
-    start = arrow.get(job['start']).format()
-    finish = arrow.get(job['finish']).format() if job['finish'] else None
-
-    return {'table': table,
-            'start': start,
-            'finish': finish}
-
-
 @app.route('/tables/<table>')
 def show_table_details(table: str):
     db = get_db()
@@ -106,15 +96,6 @@ def show_table_details(table: str):
     return render_template('table_details.html', table=table,
                            logs=logs,
                            graph_data=graph_data)
-
-
-def prepare_table_details(details: List) -> Tuple[List, List]:
-    if len(details) == 1 and details[0]['start'] is None:
-        return [], []
-    return ([print_log(d) for d in details],
-            [{'date': arrow.get(d['start']).format(),
-              'duration': d['finish'] - d['start']}
-             for d in details])
 
 
 @app.route('/update', methods=['POST'])
