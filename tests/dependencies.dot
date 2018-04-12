@@ -1,0 +1,13 @@
+strict digraph "dependencies" {
+a;
+b;
+c;
+e;
+f;
+a -> b;
+b -> c;
+c -> a;
+c -> e;
+e -> f;
+f -> c;
+}

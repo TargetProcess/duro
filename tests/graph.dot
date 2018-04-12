@@ -1,0 +1,8 @@
+strict digraph "" {
+"first.cities";
+"first.countries";
+"second.child";
+"second.parent";
+"second.child" -> "first.cities";
+"second.parent" -> "second.child";
+}

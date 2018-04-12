@@ -8,6 +8,5 @@ config.conf
 __pycache__
 views
 *.yml
-*.dot
 duro.db
 

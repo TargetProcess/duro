@@ -21,19 +21,19 @@ def test_get_all_commits(empty_git, non_empty_git):
         get_all_commits('.')
 
 
-def test_save_and_read_commit(db_str, empty_db_cursor):
+def test_save_and_read_commit(empty_db_str, empty_db_cursor):
     commits = ['063fac57a03eadfd5077e2c972504426916769ab',
                '92012fc409ee64934fc10c8cea54ce9ef6e2114b']
-    assert get_latest_new_commit(commits, db_str) == commits[0]
+    assert get_latest_new_commit(commits, empty_db_str) == commits[0]
     save_commit(commits[1], empty_db_cursor)
-    commit = get_previous_commit(db_str)
+    commit = get_previous_commit(empty_db_str)
     assert commit == commits[1]
     sleep(1)
-    assert get_latest_new_commit(commits, db_str) == commits[0]
+    assert get_latest_new_commit(commits, empty_db_str) == commits[0]
     save_commit(commits[0], empty_db_cursor)
-    commit = get_previous_commit(db_str)
+    commit = get_previous_commit(empty_db_str)
     assert commit == commits[0]
-    assert get_latest_new_commit(commits, db_str) is None
+    assert get_latest_new_commit(commits, empty_db_str) is None
 
 
 def test_build_graph(views_path):
@@ -206,9 +206,9 @@ def test_update_table(empty_db_cursor):
     assert row[7] == 1
 
 
-def test_save_to_db(db_str, views_path, empty_db_cursor):
+def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
     graph = build_graph(views_path)
-    save_to_db(graph, db_str, views_path, None)
+    save_to_db(graph, empty_db_str, views_path, None)
     empty_db_cursor.execute('''select * from tables 
                 where table_name = 'second.parent'
                 ''')
@@ -220,7 +220,7 @@ def test_save_to_db(db_str, views_path, empty_db_cursor):
     assert second_parent[7] == 1
 
     graph.add_node('schema.table', {'contents': 'select', 'interval': 40})
-    save_to_db(graph, db_str, views_path, None)
+    save_to_db(graph, empty_db_str, views_path, None)
     empty_db_cursor.execute('''select * from tables 
                     where table_name = 'schema.table'
                     ''')
@@ -233,13 +233,13 @@ def test_save_to_db(db_str, views_path, empty_db_cursor):
     empty_db_cursor.execute('select count(*) from tables')
     assert empty_db_cursor.fetchone()[0] == 5
 
-    save_to_db(graph, db_str, views_path, 'commit_hash')
+    save_to_db(graph, empty_db_str, views_path, 'commit_hash')
     empty_db_cursor.execute('select * from commits')
     commit = empty_db_cursor.fetchone()
     assert commit[0] == 'commit_hash'
 
     graph.remove_node('schema.table')
-    save_to_db(graph, db_str, views_path, 'commit_hash')
+    save_to_db(graph, empty_db_str, views_path, 'commit_hash')
     empty_db_cursor.execute('''select count(*) from tables 
                         where table_name = 'schema.table'
                         and deleted is not null
