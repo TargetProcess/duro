@@ -5,7 +5,8 @@ from server.formatters import (print_log, format_as_human_date,
                                format_as_short_ts, format_delta,
                                format_seconds, format_interval,
                                format_average_time, skip_none,
-                               format_minutes, format_job)
+                               format_minutes, format_job,
+                               prepare_table_details)
 
 
 def test_print_log():
@@ -32,6 +33,44 @@ def test_print_log():
                        '14:57:05: Replaced old table (26s)',
                        '14:57:45: Dropped old table (40s)']
     assert len(printed) == 8
+
+
+def test_prepare_table_details():
+    log = {'start': None,
+           'connect': 1522151699,
+           'select': 1522151773,
+           'create_temp': 1522151783,
+           'process': None,
+           'csv': 1522151793,
+           's3': None,
+           'insert': None,
+           'clean_csv': None,
+           'tests': 1522151799,
+           'replace_old': 1522151825,
+           'drop_old': 1522151865,
+           'finish': 1522151865
+           }
+    assert prepare_table_details([log]) == ([], [])
+
+    log['start'] = 1522151698
+    assert prepare_table_details([log]) == (
+        [
+            ['Tuesday, March 27, 14:54:58',
+             '14:54:59: Connected to Redshift (1s)',
+             '14:56:13: Selected data from Redshift (1m 14s)',
+             '14:56:23: Created temporary table (10s)',
+             '14:56:33: Exported processed data to CSV (10s)',
+             '14:56:39: Run tests (6s)', '14:57:05: Replaced old table (26s)',
+             '14:57:45: Dropped old table (40s)'
+             ]
+        ],
+        [
+            {
+                'date': '2018-03-27 11:54:58+00:00',
+                'duration': 167
+            }
+        ]
+    )
 
 
 def test_format_as_human_date():
