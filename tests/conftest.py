@@ -86,7 +86,6 @@ def db_cursor():
 def empty_git():
     repo_name = 'empty repository'
     repo = Repo.init(repo_name)
-    print(repo.git_dir)
     yield repo.working_dir
     shutil.rmtree(f'./{repo_name}')
 

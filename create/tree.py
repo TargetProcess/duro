@@ -21,7 +21,7 @@ def create_tree(root: str, global_config: GlobalConfig,
                 interval: int = None, remaining_tables: int = 1):
     tree_logger = setup_logger(f'{root}_tree')
 
-    table = load_info(root, global_config.db_path)
+    table = load_info(global_config.db_path, root)
 
     if table.interval is None and interval is not None:
         tree_logger.info(f'Updating interval for {root}')
@@ -39,16 +39,16 @@ def create_tree(root: str, global_config: GlobalConfig,
     tree_logger.info(f'Tables remaining: {remaining_tables}')
 
     for child in children:
-        set_waiting(table.name, global_config.db_path, True)
+        set_waiting(global_config.db_path, table.name, True)
         create_tree(child, global_config, table.interval, remaining_tables)
-        set_waiting(table.name, global_config.db_path, False)
+        set_waiting(global_config.db_path, table.name, False)
     try:
         tree_logger.info(f'Creating {table.name}')
         create_table(table, global_config.db_path, global_config.views_path,
                      remaining_tables)
     except MaterializationError as e:
         tree_logger.error(e)
-        reset_start(table.name, global_config.db_path)
+        reset_start(global_config.db_path, table.name)
         send_slack_notification(str(e), f'Error while creating {table.name}')
 
 
@@ -63,18 +63,18 @@ def get_children(root: str, graph: nx.DiGraph, logger: Logger) -> List:
 
 def should_be_created(table: Table, db_path: str, logger: Logger,
                       remaining_tables: int) -> bool:
-    waiting, waiting_too_long = is_waiting(table.name, db_path)
+    waiting, waiting_too_long = is_waiting(db_path, table.name)
     if waiting and not waiting_too_long:
         logger.info(
             f'{table.name} is waiting for its children to be updated, won’t be updated now')
         return False
     if waiting_too_long:
         logger.info('Can’t be waiting for so long, resetting the flag')
-        set_waiting(table.name, db_path, False)
+        set_waiting(db_path, table.name, False)
 
-    if is_running(table.name, db_path):
+    if is_running(db_path, table.name):
         logger.info('Already running, waiting till done')
-        finished = wait_till_finished(table.name, db_path, logger)
+        finished = wait_till_finished(db_path, table.name, logger)
         if finished:
             remaining_tables -= 1
             logger.info(f'Tables remaining: {remaining_tables}')
@@ -100,18 +100,18 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
     return True
 
 
-def wait_till_finished(table: str, db: str, logger: Logger) -> bool:
+def wait_till_finished(db_str: str, table: str, logger: Logger) -> bool:
     timeout = 10
-    average_time = get_average_completion_time(table, db)
+    average_time = get_average_completion_time(table, db_str)
     logger.info(f'Average completion time: {average_time}')
     while True:
         time.sleep(timeout)
-        time_running = get_time_running(table, db)
+        time_running = get_time_running(db_str, table)
         if time_running is None:
             logger.info('Waited until completion')
             return True
         if time_running > average_time * 5:
             logger.info('Can’t be running for so long, resetting')
-            reset_start(table, db)
+            reset_start(db_str, table)
             return False
         logger.info(f'Runs for {time_running} seconds')

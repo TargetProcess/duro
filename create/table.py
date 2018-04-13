@@ -19,7 +19,7 @@ def create_table(table: Table, db_path: str, views_path: str,
 
     # pylint: disable=no-member
     # noinspection PyUnresolvedReferences
-    log_start(table.name, db_path, ts.start)
+    log_start(db_path, table.name, ts.start)
     logger.info(f'Creating {table.name} with interval {table.interval}')
 
     connection = create_connection()
@@ -50,6 +50,6 @@ def create_table(table: Table, db_path: str, views_path: str,
     connection.close()
 
     update_last_created(db_path, table.name, creation_timestamp, ts.duration)
-    log_timestamps(table.name, db_path, ts)
+    log_timestamps(db_path, table.name, ts)
     remaining_tables -= 1
     logger.info(f'Tables remaining: {remaining_tables}')

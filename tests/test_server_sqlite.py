@@ -1,4 +1,3 @@
-from pprint import pprint
 import arrow
 
 from graph import build_graph
