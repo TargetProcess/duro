@@ -56,7 +56,6 @@ def set_table_for_update(db_connection, table: str,
                          force_tree: int,
                          config_path='config.conf'):
     if force_tree:
-        print(load_global_config(config_path).graph.nodes())
         propagate_force_flag(db_connection, table,
                              load_global_config(config_path).graph)
     else:

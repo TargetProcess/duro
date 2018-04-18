@@ -102,7 +102,7 @@ def should_be_created(table: Table, db_path: str, logger: Logger,
 
 def wait_till_finished(db_str: str, table: str, logger: Logger) -> bool:
     timeout = 10
-    average_time = get_average_completion_time(table, db_str)
+    average_time = get_average_completion_time(db_str, table)
     logger.info(f'Average completion time: {average_time}')
     while True:
         time.sleep(timeout)

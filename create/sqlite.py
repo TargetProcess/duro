@@ -172,7 +172,7 @@ def get_time_waiting(db_str: str, table: str) -> int:
         return result[0] if result else None
 
 
-def get_average_completion_time(table: str, db_str: str) -> int:
+def get_average_completion_time(db_str: str, table: str) -> int:
     with sqlite3.connect(db_str) as connection:
         cursor = connection.cursor()
         cursor.execute(f'''

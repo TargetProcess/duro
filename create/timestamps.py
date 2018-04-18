@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import arrow
 
@@ -39,5 +39,7 @@ class Timestamps:
     # pylint: disable=no-member
     # noinspection PyUnresolvedReferences
     @property
-    def duration(self) -> int:
-        return self.finish - self.start
+    def duration(self) -> Optional[int]:
+        if getattr(self, 'finish', None):
+            return self.finish - self.start
+        return None
