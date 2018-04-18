@@ -26,8 +26,7 @@ def create_tree(root: str, global_config: GlobalConfig,
     if table.interval is None and interval is not None:
         tree_logger.info(f'Updating interval for {root}')
         # noinspection PyArgumentList
-        table = Table(table.name, table.query, interval, table.config,
-                      table.last_created, table.force, table.waiting)
+        table.interval = interval
 
     if not should_be_created(table, global_config.db_path, tree_logger,
                              remaining_tables):
