@@ -1,7 +1,7 @@
 import pytest
 import arrow
 
-from create.sqlite import (load_info, update_last_created,
+from create.sqlite import (load_table_details, update_last_created,
                            log_start, log_timestamps,
                            reset_start, reset_all_starts,
                            set_waiting, is_waiting,
@@ -15,14 +15,14 @@ from server.sqlite import set_table_for_update, get_table_details
 
 
 def test_load_info(db_str):
-    first = load_info(db_str, 'first.cities')
+    first = load_table_details(db_str, 'first.cities')
     assert first.name == 'first.cities'
     assert first.interval == 1440
     assert first.waiting is None
     assert first.config['grant_select'] == 'jane, john'
 
     with pytest.raises(TableNotFoundInDBError):
-        load_info(db_str, 'non-existent')
+        load_table_details(db_str, 'non-existent')
 
 
 # noinspection PyTypeChecker

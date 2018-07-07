@@ -5,7 +5,7 @@ from typing import List
 import arrow
 import networkx as nx
 
-from create.sqlite import (load_info, is_running, reset_start,
+from create.sqlite import (load_table_details, is_running, reset_start,
                            get_average_completion_time, get_time_running,
                            set_waiting, is_waiting)
 from create.table import create_table
@@ -21,7 +21,7 @@ def create_tree(root: str, global_config: GlobalConfig,
                 interval: int = None, remaining_tables: int = 1):
     tree_logger = setup_logger(f'{root}_tree')
 
-    table = load_info(global_config.db_path, root)
+    table = load_table_details(global_config.db_path, root)
 
     if table.interval is None and interval is not None:
         tree_logger.info(f'Updating interval for {root}')

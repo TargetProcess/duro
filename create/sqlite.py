@@ -9,7 +9,7 @@ from errors import TableNotFoundInDBError
 from utils.utils import Table
 
 
-def load_info(db_str: str, table: str) -> Table:
+def load_table_details(db_str: str, table: str) -> Table:
     with sqlite3.connect(db_str) as connection:
         connection.row_factory = sqlite3.Row
         try:

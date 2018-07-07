@@ -11,14 +11,14 @@ from utils.logger import setup_logger
 from utils.utils import Table
 
 
+# pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 def create_table(table: Table, db_path: str, views_path: str,
                  remaining_tables: int):
     logger = setup_logger(table.name)
     ts = Timestamps()
     ts.log('start')
 
-    # pylint: disable=no-member
-    # noinspection PyUnresolvedReferences
     log_start(db_path, table.name, ts.start)
     logger.info(f'Creating {table.name} with interval {table.interval}')
 
@@ -36,9 +36,10 @@ def create_table(table: Table, db_path: str, views_path: str,
                                                connection, logger)
         ts.log('create_temp')
 
-    tests_queries = load_tests(table.name, views_path, logger)
-    test_results, failed_tests = run_tests(tests_queries, connection, logger)
+    tests = load_tests(table.name, views_path, logger)
+    test_results, failed_tests = run_tests(tests, connection, logger)
     ts.log('tests')
+
     if not test_results:
         drop_temp_table(table.name, connection, logger)
         raise TestsFailedError(table.name, failed_tests)
