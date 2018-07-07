@@ -189,7 +189,7 @@ def build_query_to_create_timestamps_table():
     return f'''
         CREATE TABLE IF NOT EXISTS timestamps 
         ("table" text, 
-        {",".join(events)})
+        {", ".join(events)})
     '''
 
 

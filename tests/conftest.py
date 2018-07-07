@@ -1,10 +1,11 @@
 import os
+import re
 import shutil
 import sqlite3
+from shutil import copyfile
 
 import logzero
 import pytest
-from shutil import copyfile
 from git import Repo
 
 DB_PATH = './test.db'
@@ -117,3 +118,20 @@ def full_config():
 def partial_config():
     return 'configs/partial_config.conf'
 
+
+def similar_query(first_query: str, second_query: str, *args):
+    """
+    True if all strings are the same after we remove all spaces,
+    tabs, and newlines.
+    """
+    queries = (first_query, second_query, *args)
+    if all(q is None for q in queries):
+        return True
+
+    single_lines = [re.sub('[ \t\n]', '', query) for query in queries]
+
+    return all(query == single_lines[0] for query in single_lines[1:])
+
+
+def pytest_configure():
+    pytest.similar = similar_query

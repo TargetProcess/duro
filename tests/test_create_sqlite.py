@@ -220,11 +220,13 @@ def test_is_waiting(db_str, db_cursor):
 
 def test_build_query_to_create_timestamps_table():
     query = build_query_to_create_timestamps_table()
-    assert query == '''
+    assert pytest.similar(query, '''
         CREATE TABLE IF NOT EXISTS timestamps 
         ("table" text, 
-        "start" int,"connect" int,"select" int,"create_temp" int,"process" int,"csv" int,"s3" int,"insert" int,"clean_csv" int,"tests" int,"replace_old" int,"drop_old" int,"finish" int)
-    '''
+        "start" int, "connect" int, "select" int, "create_temp" int,
+        "process" int, "csv" int, "s3" int, "insert" int, "clean_csv" int,
+        "tests" int, "replace_old" int, "drop_old" int, "finish" int)
+    ''')
 
 
 def test_get_tables_to_create(db_str, db_connection, db_cursor):
