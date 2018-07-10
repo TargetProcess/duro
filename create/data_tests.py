@@ -1,29 +1,43 @@
 import os
-from logging import Logger
 from typing import Tuple, List, Optional
 
 from utils.file_utils import read_file
+from utils.logger import log_action, setup_logger
+
+TestResults = Tuple[bool, Optional[List]]
+
+logger = setup_logger()
 
 
-def load_tests(table: str, path: str, logger: Logger) -> str:
-    logger.info(f'Loading tests for {table}')
+def load_tests(table: str, path: str) -> str:
+    has_tests, tests_file = find_tests(table, path)
+    if not has_tests:
+        logger.info(f'No tests for {table}')
+        return ''
+
+    logger.info(f'Tests file found for {table}')
+    return read_file(tests_file).replace(f'{table}', f'{table}_temp')
+
+
+def find_tests(table: str, path: str) -> Tuple[bool, str]:
     folder, file = table.split('.')
-    tests_file = os.path.join(path, folder, f'{file}_test.sql')
-    if os.path.isfile(tests_file):
-        return read_file(tests_file).replace(f'{table}', f'{table}_temp')
-    else:
-        tests_file = os.path.join(path, f'{table}_test.sql')
-        if os.path.isfile(tests_file):
-            return read_file(tests_file).replace(f'{table}', f'{table}_temp')
-    logger.info(f'No tests for {table}')
-    return ''
+
+    inside_folder_file = os.path.join(path, folder, f'{file}_test.sql')
+    if os.path.isfile(inside_folder_file):
+        return True, inside_folder_file
+
+    outside_folder_file = os.path.join(path, f'{table}_test.sql')
+    if os.path.isfile(outside_folder_file):
+        return True, outside_folder_file
+
+    return False, ''
 
 
-def run_tests(tests_queries: str, connection, logger: Logger) -> Tuple[bool, Optional[List]]:
+@log_action('run tests')
+def run_tests(tests_queries: str, connection) -> TestResults:
     if not tests_queries:
         return True, None
 
-    logger.info(f'Running tests')
     with connection.cursor() as cursor:
         queries = (q for q in tests_queries.split(';') if len(q) > 0)
         results = []
@@ -38,7 +52,7 @@ def run_tests(tests_queries: str, connection, logger: Logger) -> Tuple[bool, Opt
     return passed, failed_columns
 
 
-def parse_tests_results(results) -> Tuple[bool, Optional[List]]:
+def parse_tests_results(results) -> TestResults:
     passed = all((result[1] for result in results))
     if not passed:
         failed_columns = [result[0] for result in results if not result[1]]
