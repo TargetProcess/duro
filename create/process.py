@@ -2,6 +2,7 @@ import csv
 import gzip
 import importlib.machinery
 from logging import Logger
+from os import makedirs
 from typing import List, Dict, Tuple, Callable
 
 import arrow
@@ -31,6 +32,8 @@ def process_and_upload_data(table: Table, processor_name: str, connection,
     folder = s3_credentials()["folder"]
     current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
     filename = f'{folder}/{table}-{current_time}.csv.gzip'
+
+    makedirs(folder, exist_ok=True)
     save_to_csv(data, columns, filename)
     ts.log('csv')
 
