@@ -4,7 +4,7 @@ import arrow
 from create.sqlite import (load_table_details, update_last_created,
                            log_start, log_timestamps,
                            reset_start, reset_all_starts,
-                           set_waiting, is_waiting,
+                           set_waiting_flag, is_waiting,
                            is_running, get_time_running,
                            get_time_waiting, get_average_completion_time,
                            build_query_to_create_timestamps_table,
@@ -164,7 +164,7 @@ def test_is_running(db_str):
 
 
 def test_set_waiting(db_str, db_cursor):
-    set_waiting(db_str, 'first.cities', True)
+    set_waiting_flag(db_str, 'first.cities', True)
 
     db_cursor.execute('''
                     SELECT waiting 
@@ -174,7 +174,7 @@ def test_set_waiting(db_str, db_cursor):
     timestamp = db_cursor.fetchone()[0]
     assert arrow.now().timestamp - timestamp < 10
 
-    set_waiting(db_str, 'first.cities', False)
+    set_waiting_flag(db_str, 'first.cities', False)
 
     db_cursor.execute('''
             SELECT waiting 
@@ -183,7 +183,7 @@ def test_set_waiting(db_str, db_cursor):
         ''')
     assert db_cursor.fetchone()[0] == 0
 
-    set_waiting(db_str, 'non-existent', True)
+    set_waiting_flag(db_str, 'non-existent', True)
     db_cursor.execute('''
             SELECT waiting 
             FROM tables
@@ -193,7 +193,7 @@ def test_set_waiting(db_str, db_cursor):
 
 
 def test_get_time_waiting(db_str):
-    set_waiting(db_str, 'first.cities', True)
+    set_waiting_flag(db_str, 'first.cities', True)
     time = get_time_waiting(db_str, 'first.cities')
     assert time is not None
     assert time < 10
@@ -205,7 +205,7 @@ def test_get_time_waiting(db_str):
 def test_is_waiting(db_str, db_cursor):
     assert is_waiting(db_str, 'first.cities') == (False, False)
 
-    set_waiting(db_str, 'first.cities', True)
+    set_waiting_flag(db_str, 'first.cities', True)
     assert is_waiting(db_str, 'first.cities') == (True, False)
 
     old = arrow.now().replace(minutes=-180).timestamp

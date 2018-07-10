@@ -105,7 +105,15 @@ def reset_all_starts(db_str: str):
         connection.execute('UPDATE tables SET started = NULL')
 
 
-def set_waiting(db_str: str, table: str, waiting: bool):
+def mark_table_as_waiting(db_str: str, table: str):
+    set_waiting_flag(db_str, table, True)
+
+
+def mark_table_as_not_waiting(db_str: str, table: str):
+    set_waiting_flag(db_str, table, False)
+
+
+def set_waiting_flag(db_str: str, table: str, waiting: bool):
     with sqlite3.connect(db_str) as connection:
         connection.execute('''
             UPDATE tables SET waiting = ?
