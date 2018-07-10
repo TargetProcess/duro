@@ -4,8 +4,8 @@ import pytest
 
 from utils.file_utils import (parse_filename, convert_interval_to_integer,
                               is_processor_ddl, is_query, load_ddl_query,
-                              load_processor, load_query, parse_view,
-                              list_view_files)
+                              load_processor, load_query, load_table_from_file,
+                              list_tables_in_path)
 
 
 def filenames(views_path):
@@ -29,22 +29,25 @@ def test_parse_filename():
     assert parse_filename('first/cities — 1m.sql') == ('first.cities', '1m')
     assert parse_filename('first/first.cities.sql') == ('first.cities', None)
     assert parse_filename('second/first.cities.sql') == ('first.cities', None)
-    assert parse_filename('first/first.cities — 1h.sql') == ('first.cities', '1h')
-    assert parse_filename('second/first.cities - 1h.sql') == ('first.cities', '1h')
+    assert parse_filename('first/first.cities — 1h.sql') == (
+        'first.cities', '1h')
+    assert parse_filename('second/first.cities - 1h.sql') == (
+        'first.cities', '1h')
 
 
 def test_parse_view(views_path):
     name = os.path.join(views_path, 'first', 'cities — 24h.sql')
-    cities = parse_view(name, views_path)
+    cities = load_table_from_file(name, views_path)
     assert cities.filename == name
     assert cities.table == 'first.cities'
     assert cities.interval == '24h'
-    assert cities.contents == '''select city, country
-from first.cities_raw'''
+    assert pytest.similar(cities.select_query,
+                          '''select city, country 
+                          from first.cities_raw''')
 
 
 def test_list_view_files(views_path):
-    views = list_view_files(views_path)
+    views = list_tables_in_path(views_path)
     assert len(views) == 4
 
     s_child = [v for v in views if v[0] == 'second.child'][0]
@@ -56,7 +59,8 @@ def test_list_view_files(views_path):
     assert s_parent[1]['interval'] == 24
 
     f_countries = [v for v in views if v[0] == 'first.countries'][0]
-    assert f_countries[1]['contents'] == 'select country, continent\nfrom first.countries_raw;'
+    assert f_countries[1][
+               'contents'] == 'select country, continent\nfrom first.countries_raw;'
     assert f_countries[1]['interval'] == 60
 
 
@@ -78,7 +82,7 @@ def test_is_processor_ddl(views_path):
     results = [is_processor_ddl(f)
                for f in filenames(views_path)]
 
-    assert results == [False, True, False,
+    assert results == [True, False, False,
                        False, False, False,
                        False, False]
 
@@ -94,10 +98,11 @@ def test_is_query(views_path):
 
 def test_load_ddl_query(views_path):
     ddl = load_ddl_query('first.countries', views_path)
-    assert ddl == '''create table first.countries_temp(
-city text,
-country text
-)'''
+    assert pytest.similar(ddl,
+                          '''create table first.countries_duro_temp(
+                            city text,
+                            country text
+                            )''')
 
     with pytest.raises(ValueError):
         load_ddl_query('first.cities', views_path)

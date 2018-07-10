@@ -1,2 +1,4 @@
-select country, continent
-from first.countries_raw;
+create table first.countries(
+city text,
+country text
+)

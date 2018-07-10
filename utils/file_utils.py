@@ -3,14 +3,17 @@ import glob
 import os
 from functools import lru_cache
 from itertools import chain
-from typing import List, Tuple, NamedTuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Callable
+
+from utils.utils import temp_postfix
 
 
-class ViewFile(NamedTuple):
-    filename: str
-    table: str
-    interval: str
-    contents: str
+class TableFile:
+    def __init__(self, filename: str, views_path: str):
+        self.filename = filename
+        short_filename = filename.replace(f'{views_path}/', '', 1)
+        self.table, self.interval = parse_filename(short_filename)
+        self.select_query = load_select_query(self.table, views_path)
 
 
 def parse_filename(filename: str) -> Tuple:
@@ -25,19 +28,21 @@ def parse_filename(filename: str) -> Tuple:
         return f'{folder}.{table}', interval
 
 
-def parse_view(filename: str, path: str) -> ViewFile:
-    table, interval = parse_filename(filename.replace(f'{path}/', '', 1))
-
-    return ViewFile(filename, table, interval, read_file(filename))
+def load_table_from_file(filename: str, views_path: str) -> TableFile:
+    return TableFile(filename, views_path)
 
 
-def list_view_files(path: str) -> List[Tuple[str, Dict]]:
-    views = [parse_view(file, path)
-             for file in glob.glob(path + '/**/*.sql', recursive=True)
+def list_tables_in_path(views_path: str) -> List[Tuple[str, Dict]]:
+    views = [load_table_from_file(file, views_path)
+             for file in glob.glob(views_path + '/**/*.sql', recursive=True)
              if is_query(file)]
-    return [(view.table, {'contents': view.contents,
-                          'interval': convert_interval_to_integer(
-                              view.interval)})
+
+    return [(view.table,
+             {
+                 'contents': view.select_query,
+                 'interval': convert_interval_to_integer(view.interval)
+             }
+             )
             for view in views]
 
 
@@ -45,24 +50,97 @@ def is_query(filename: str) -> bool:
     if not filename:
         return False
 
-    return (filename.endswith('.sql')
-            and not filename.endswith('_test.sql')
-            and not is_processor_ddl(filename)
+    return (is_sql_query(filename)
+            and not is_test(filename)
+            and not is_processor_select_query(filename)
             and os.path.isfile(filename))
 
 
-def is_processor_ddl(filename: str) -> bool:
-    if not filename or '_ddl' not in filename:
-        return False
-    path = os.path.dirname(filename)
-    file = os.path.basename(filename)
-    table_name = file.replace('_ddl', '')
-    processor_filename = f'{os.path.splitext(table_name)[0].split()[0]}.py'
-    processor_file = os.path.join(path, processor_filename)
+def is_sql_query(filename: str) -> bool:
+    return filename.endswith('.sql')
 
-    if os.path.isfile(processor_file) and file.endswith('_ddl.sql'):
-        return True
-    return False
+
+def is_test(filename: str) -> bool:
+    return filename.endswith('_test.sql')
+
+
+def is_processor(filename: str) -> bool:
+    return filename.endswith('.py')
+
+
+def is_processor_select_query(filename: str) -> bool:
+    if not filename.endswith('_select.sql'):
+        return False
+
+    ddl_filename = filename.replace('_select.sql', '.sql')
+    return has_processor(ddl_filename)
+
+
+def has_processor(filename: str) -> bool:
+    processor_filename = f'{os.path.splitext(filename)[0].split()[0]}.py'
+
+    return os.path.isfile(processor_filename)
+
+
+def has_processor_select_query(filename: str) -> bool:
+    pass
+
+
+def is_processor_ddl(filename: str) -> bool:
+    if not filename or not is_sql_query(filename):
+        return False
+
+    return has_processor(filename)
+
+
+def load_processor(table: str, views_path: str) -> str:
+    return find_file_for_table(table, views_path, is_processor)
+
+
+def load_ddl_query(table: str, views_path: str) -> str:
+    ddl_file = find_file_for_table(table, views_path, is_processor_ddl)
+    query = read_file(ddl_file)
+    return query.lower().replace(f'create table {table}',
+                                 f'create table {table}{temp_postfix}')
+
+
+def load_query(table: str, views_path: str) -> str:
+    return read_file(find_file_for_table(table, views_path, is_query))
+
+
+def load_select_query(table: str, views_path: str) -> str:
+    if load_processor(table, views_path):
+        processor_select_query = find_file_for_table(table, views_path, is_processor_select_query)
+        return read_file(processor_select_query)
+
+    return load_query(table, views_path)
+
+
+def find_file_for_table(table: str, views_path: str, match: Callable) -> str:
+    folder, file = table.split('.')
+    files_inside = [file for file in
+                    glob.glob(os.path.join(views_path, folder, f'{file}*'))
+                    if match(file)]
+
+    if files_inside and os.path.isfile(files_inside[0]):
+        return files_inside[0]
+
+    else:
+        files_outside = [file for file in
+                         glob.glob(os.path.join(views_path, table, '*'))
+                         if match(file)]
+        if files_outside and os.path.isfile(files_outside[0]):
+            return files_outside[0]
+
+    return ''
+
+
+def find_tables_with_missing_files() -> Optional[str]:
+    # tests without select
+    # .py without select
+    # .py without ddl
+    # forbidden postfixes
+    pass
 
 
 def read_file(filename: str) -> str:
@@ -98,45 +176,3 @@ def convert_interval_to_integer(interval: Optional[str]) -> Optional[int]:
         return value * units[unit]
     except ValueError:
         raise ValueError('Invalid interval')
-
-
-def find_file_for_table(table: str, views_path: str, match: callable) -> str:
-    folder, file = table.split('.')
-    files_inside = [file for file in
-                    glob.glob(os.path.join(views_path, folder, f'{file}*'))
-                    if match(file)]
-
-    if files_inside and os.path.isfile(files_inside[0]):
-        return files_inside[0]
-
-    else:
-        files_outside = [file for file in
-                         glob.glob(os.path.join(views_path, table, '*'))
-                         if match(file)]
-        if files_outside and os.path.isfile(files_outside[0]):
-            return files_outside[0]
-
-    return ''
-
-
-def load_processor(table: str, views_path: str) -> str:
-    return find_file_for_table(table, views_path, lambda s: s.endswith('.py'))
-
-
-def load_ddl_query(table: str, views_path: str) -> str:
-    query = read_file(
-        find_file_for_table(table, views_path, lambda s: s.endswith('_ddl.sql')))
-    return query.lower().replace(f'create table {table}',
-                                 f'create table {table}_temp')
-
-
-def load_query(table: str, views_path: str) -> str:
-    return read_file(find_file_for_table(table, views_path, is_query))
-
-
-def find_tables_with_missing_files() -> Optional[str]:
-    # tests without select
-    # .py without select
-    # .py without ddl
-    # forbidden postfixes
-    pass
