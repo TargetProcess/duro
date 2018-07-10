@@ -27,14 +27,14 @@ def test_load_dist_sort_keys(db_str):
 # noinspection PyUnresolvedReferences
 def test_add_dist_sort_keys(db_str):
     child = load_table_details(db_str, 'second.child')
-    query = add_dist_sort_keys(child.name, child.query, child.config)
+    query = add_dist_sort_keys(child)
     assert pytest.similar(query, '''
         CREATE TABLE second.child_temp
         distkey("city")  diststyle all
         AS (select city, country from first.cities);''')
 
     child = load_table_details(db_str, 'second.parent')
-    query = add_dist_sort_keys(child.name, child.query, child.config)
+    query = add_dist_sort_keys(child)
     assert pytest.similar(query, '''
         CREATE TABLE second.parent_temp diststyle even
         AS (select * from second.child limit 10);''')

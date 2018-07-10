@@ -1,6 +1,6 @@
 from typing import Dict
 
-from utils.utils import DistSortKeys
+from utils.utils import DistSortKeys, Table
 
 
 def load_dist_sort_keys(config: Dict) -> DistSortKeys:
@@ -12,9 +12,10 @@ def load_dist_sort_keys(config: Dict) -> DistSortKeys:
     return DistSortKeys(distkey, diststyle, sortkey)
 
 
-def add_dist_sort_keys(table: str, query: str, config: Dict) -> str:
-    keys = load_dist_sort_keys(config)
-    return f'''CREATE TABLE {table}_temp
+def add_dist_sort_keys(table: Table) -> str:
+    query = table.query.rstrip(';\n')
+    keys = load_dist_sort_keys(table.config)
+    return f'''CREATE TABLE {table.name}_temp
             {keys.distkey} {keys.sortkey} {keys.diststyle}
             AS (
             {query}
