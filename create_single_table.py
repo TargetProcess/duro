@@ -13,7 +13,7 @@ from utils.utils import Table
 
 
 def create_table(table: Table, views_path: str, verbose=False):
-    logger = setup_logger(table.name, stdout=True)
+    logger = setup_logger(stdout=True)
     logger.info(f'Creating {table.name}')
     if verbose:
         logger.info(f'Using views path: {views_path}')
@@ -28,19 +28,18 @@ def create_table(table: Table, views_path: str, verbose=False):
         process_and_upload_data(table, processor,
                                 connection,
                                 Timestamps(),
-                                views_path, logger)
+                                views_path)
     else:
-        create_temp_table(table.name, table.query, table.config,
-                          connection, logger)
+        create_temp_table(table, connection)
 
-    tests_queries = load_tests(table.name, views_path, logger)
-    test_results, _ = run_tests(tests_queries, connection, logger)
+    tests_queries = load_tests(table.name, views_path)
+    test_results, _ = run_tests(tests_queries, connection)
     if not test_results:
-        drop_temp_table(table.name, connection, logger)
+        drop_temp_table(table.name, connection)
         return
 
-    replace_old_table(table.name, connection, logger)
-    drop_old_table(table.name, connection, logger)
+    replace_old_table(table.name, connection)
+    drop_old_table(table.name, connection)
     connection.close()
 
 
@@ -52,7 +51,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', '-v', default=False, help='Verbose',
                         action='store_true')
     args = parser.parse_args()
-    # noinspection PyArgumentList
-    table = Table(args.table, load_query(args.table, args.path), None,
-                  parse_table_config(args.table, args.path), None, None, None)
+    table = Table(name=args.table,
+                  query=load_query(args.table, args.path),
+                  interval=None,
+                  config=parse_table_config(args.table, args.path))
     create_table(table, args.path, args.verbose)

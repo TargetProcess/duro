@@ -1,5 +1,5 @@
 import json
-from typing import NamedTuple, Dict
+from typing import NamedTuple, Dict, Optional
 
 
 class DistSortKeys(NamedTuple):
@@ -9,7 +9,7 @@ class DistSortKeys(NamedTuple):
 
 
 class Table:
-    def __init__(self, name: str, query: str, interval: int,
+    def __init__(self, name: str, query: str, interval: Optional[int],
                  config: Dict = None, last_created: int = None,
                  force: bool = None, waiting: bool = None):
         self.name = name
