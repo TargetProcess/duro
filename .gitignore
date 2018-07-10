@@ -8,5 +8,6 @@ config.conf
 *.gzip
 __pycache__
 views
+!tests/views
 *.yml
 duro.db
