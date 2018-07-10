@@ -2,6 +2,7 @@
 .idea
 *.log
 config.conf
+!tests/config.conf
 *.png
 *.csv
 *.gzip

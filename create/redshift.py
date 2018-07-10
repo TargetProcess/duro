@@ -1,14 +1,14 @@
-from logging import Logger
-from typing import Dict
-
 import arrow
 import psycopg2
 
 from create.table_config import add_dist_sort_keys, load_grant_select_statements
 from credentials import redshift_credentials
 from errors import TableCreationError, RedshiftConnectionError
+from utils.logger import log_action
+from utils.utils import Table
 
 
+@log_action('create Redshift connection')
 def create_connection():
     try:
         connection = psycopg2.connect(**redshift_credentials())
@@ -18,12 +18,10 @@ def create_connection():
         raise RedshiftConnectionError
 
 
-def create_temp_table(table: str, query: str, config: Dict, connection,
-                      logger: Logger) -> int:
-    logger.info(f'Creating temp table for {table}')
-
-    create_query = add_dist_sort_keys(table, query.rstrip(';\n'), config)
-    grant_select = load_grant_select_statements(table, config)
+@log_action('create temporary table')
+def create_temp_table(table: Table, connection) -> int:
+    create_query = add_dist_sort_keys(table)
+    grant_select = load_grant_select_statements(table.name, table.config)
     full_query = f'''DROP TABLE IF EXISTS {table}_temp;
                 {create_query};
                 {grant_select};
@@ -36,13 +34,13 @@ def create_temp_table(table: str, query: str, config: Dict, connection,
     return arrow.now().timestamp
 
 
-def drop_temp_table(table: str, connection, logger: Logger):
-    logger.info(f'Dropping temp table for {table}')
+@log_action('drop temporary table')
+def drop_temp_table(table: str, connection):
     drop_table(f'{table}_temp', connection)
 
 
-def drop_old_table(table: str, connection, logger: Logger):
-    logger.info(f'Dropping old table for {table}')
+@log_action('drop old table')
+def drop_old_table(table: str, connection):
     drop_table(f'{table}_old', connection)
 
 
@@ -52,11 +50,12 @@ def drop_table(table: str, connection):
         cursor.execute(query_drop)
 
 
-def replace_old_table(table: str, connection, logger: Logger):
-    logger.info(f'Replacing old table for {table}')
+@log_action('replace old table')
+def replace_old_table(table: str, connection):
     short_table_name = table.split('.')[-1]
 
     drop_view(table, connection)
+
     with connection.cursor() as cursor:
         query_replace = f'''DROP TABLE IF EXISTS {table}_old;
                 CREATE TABLE IF NOT EXISTS {table} (id int);

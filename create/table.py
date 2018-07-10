@@ -29,24 +29,24 @@ def create_table(table: Table, db_path: str, views_path: str,
     if processor:
         creation_timestamp = process_and_upload_data(table, processor,
                                                      connection, ts,
-                                                     views_path, logger)
+                                                     views_path)
     else:
         creation_timestamp = create_temp_table(table.name, table.query,
                                                table.config,
-                                               connection, logger)
+                                               connection)
         ts.log('create_temp')
 
-    tests = load_tests(table.name, views_path, logger)
-    test_results, failed_tests = run_tests(tests, connection, logger)
+    tests = load_tests(table.name, views_path)
+    test_results, failed_tests = run_tests(tests, connection)
     ts.log('tests')
 
     if not test_results:
-        drop_temp_table(table.name, connection, logger)
+        drop_temp_table(table.name, connection)
         raise TestsFailedError(table.name, failed_tests)
 
-    replace_old_table(table.name, connection, logger)
+    replace_old_table(table.name, connection)
     ts.log('replace_old')
-    drop_old_table(table.name, connection, logger)
+    drop_old_table(table.name, connection)
     ts.log('drop_old')
     connection.close()
 
