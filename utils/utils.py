@@ -1,6 +1,8 @@
 import json
 from typing import NamedTuple, Dict, Optional
 
+temp_postfix = '_duro_temp'
+
 
 class DistSortKeys(NamedTuple):
     distkey: str

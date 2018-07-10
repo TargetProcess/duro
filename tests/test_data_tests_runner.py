@@ -14,11 +14,11 @@ def test_parse_tests_results():
 def test_load_tests(views_path):
     cities_reference = '''
         select (city = 'Paris') as correct_capital_of_france
-        from first.cities_temp
+        from first.cities_duro_temp
         where country = 'France';
 
         select (city = 'Ottawa')  as correct_capital_of_canada
-        from first.cities_temp
+        from first.cities_duro_temp
         where country = 'Canada';
     '''
     cities_tests = load_tests('first.cities', views_path)
@@ -26,7 +26,7 @@ def test_load_tests(views_path):
 
     countries_reference = '''
         select (continent = 'Europe') as correct_continent_for_france
-        from first.countries_temp
+        from first.countries_duro_temp
         where country = 'France';
     '''
 

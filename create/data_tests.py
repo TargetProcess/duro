@@ -3,6 +3,7 @@ from typing import Tuple, List, Optional
 
 from utils.file_utils import read_file
 from utils.logger import log_action, setup_logger
+from utils.utils import temp_postfix
 
 TestResults = Tuple[bool, Optional[List]]
 
@@ -16,7 +17,7 @@ def load_tests(table: str, path: str) -> str:
         return ''
 
     logger.info(f'Tests file found for {table}')
-    return read_file(tests_file).replace(f'{table}', f'{table}_temp')
+    return read_file(tests_file).replace(f'{table}', f'{table}{temp_postfix}')
 
 
 def find_tests(table: str, path: str) -> Tuple[bool, str]:

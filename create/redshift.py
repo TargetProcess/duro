@@ -5,7 +5,7 @@ from create.table_config import add_dist_sort_keys, load_grant_select_statements
 from credentials import redshift_credentials
 from errors import TableCreationError, RedshiftConnectionError
 from utils.logger import log_action
-from utils.utils import Table
+from utils.utils import Table, temp_postfix
 
 
 @log_action('create Redshift connection')
@@ -22,7 +22,7 @@ def create_connection():
 def create_temp_table(table: Table, connection) -> int:
     create_query = add_dist_sort_keys(table)
     grant_select = load_grant_select_statements(table.name, table.config)
-    full_query = f'''DROP TABLE IF EXISTS {table}_temp;
+    full_query = f'''DROP TABLE IF EXISTS {table}{temp_postfix};
                 {create_query};
                 {grant_select};
                 '''
@@ -41,7 +41,7 @@ def drop_temp_table(table: str, connection):
 
 @log_action('drop old table')
 def drop_old_table(table: str, connection):
-    drop_table(f'{table}_old', connection)
+    drop_table(f'{table}_duro_old', connection)
 
 
 def drop_table(table: str, connection):
@@ -57,9 +57,9 @@ def replace_old_table(table: str, connection):
     drop_view(table, connection)
 
     with connection.cursor() as cursor:
-        query_replace = f'''DROP TABLE IF EXISTS {table}_old;
+        query_replace = f'''DROP TABLE IF EXISTS {table}_duro_old;
                 CREATE TABLE IF NOT EXISTS {table} (id int);
-                ALTER TABLE {table} RENAME TO {short_table_name}_old;
+                ALTER TABLE {table} RENAME TO {short_table_name}_duro_old;
                 ALTER TABLE {table}_temp RENAME TO {short_table_name};'''
         cursor.execute(query_replace)
 

@@ -16,7 +16,7 @@ from credentials import s3_credentials
 from errors import ProcessorNotFoundError, RedshiftCopyError
 from utils.file_utils import load_ddl_query
 from utils.logger import log_action
-from utils.utils import Table
+from utils.utils import Table, temp_postfix
 
 
 def process_and_upload_data(table: Table, processor_name: str, connection,
@@ -109,7 +109,7 @@ def build_drop_and_create_query(table: str, config: Dict, views_path: str):
         create_query += f'{keys.sortkey}\n'
 
     grant_select = load_grant_select_statements(table, config)
-    return f'DROP TABLE IF EXISTS {table}_temp; {create_query}; {grant_select}'
+    return f'DROP TABLE IF EXISTS {table}{temp_postfix}; {create_query}; {grant_select}'
 
 
 @log_action('insert processed data into Redshift table')
@@ -120,7 +120,7 @@ def copy_to_redshift(filename: str, table: str, connection,
             cursor.execute(drop_and_create_query)
             connection.commit()
             cursor.execute(f'''
-            COPY {table}_temp FROM 's3://{s3_credentials()["bucket"]}/{filename}'
+            COPY {table}{temp_postfix} FROM 's3://{s3_credentials()["bucket"]}/{filename}'
             --region 'us-east-1'
             access_key_id '{s3_credentials()["aws_access_key_id"]}'
             secret_access_key '{s3_credentials()["aws_secret_access_key"]}'

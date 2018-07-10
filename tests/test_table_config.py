@@ -29,14 +29,14 @@ def test_add_dist_sort_keys(db_str):
     child = load_table_details(db_str, 'second.child')
     query = add_dist_sort_keys(child)
     assert pytest.similar(query, '''
-        CREATE TABLE second.child_temp
+        CREATE TABLE second.child_duro_temp
         distkey("city")  diststyle all
         AS (select city, country from first.cities);''')
 
     child = load_table_details(db_str, 'second.parent')
     query = add_dist_sort_keys(child)
     assert pytest.similar(query, '''
-        CREATE TABLE second.parent_temp diststyle even
+        CREATE TABLE second.parent_duro_temp diststyle even
         AS (select * from second.child limit 10);''')
 
 
@@ -48,8 +48,8 @@ def test_load_grant_select_statements(db_str):
 
     cities = load_table_details(db_str, 'first.cities')
     grant = load_grant_select_statements(cities.name, cities.config)
-    assert grant == 'GRANT SELECT ON first.cities_temp TO jane, john'
+    assert grant == 'GRANT SELECT ON first.cities_duro_temp TO jane, john'
 
     countries = load_table_details(db_str, 'first.countries')
     grant = load_grant_select_statements(countries.name, countries.config)
-    assert grant == 'GRANT SELECT ON first.countries_temp TO joan, john'
+    assert grant == 'GRANT SELECT ON first.countries_duro_temp TO joan, john'
