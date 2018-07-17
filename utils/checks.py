@@ -29,7 +29,7 @@ class Check(ABC):
         for table in tables:
             try:
                 check_result = self.check(table)
-            except Exception:
+            except (OSError, ValueError):
                 failures.append(table)
                 continue
 
@@ -39,7 +39,7 @@ class Check(ABC):
         if not failures:
             return None
 
-        return f'{self.message}: {failures}.'
+        return f'{self.message}: {", ".join(failures)}.'
 
 
 class TestsWithoutQuery(Check):
@@ -53,7 +53,7 @@ class TestsWithoutQuery(Check):
 
     @property
     def message(self) -> str:
-        return 'Names ending in _test should be used for tests only'
+        return 'Some tables have tests, but not a SELECT query'
 
 
 class ProcessorsWithoutSelect(Check):
@@ -80,13 +80,14 @@ class ProcessorsWithoutDDL(Check):
         return 'Some processors don’t have a CREATE TABLE query'
 
 
-enabled_checks = (TestsWithoutQuery, ProcessorsWithoutSelect,
+enabled_checks = (TestsWithoutQuery,
+                  ProcessorsWithoutSelect,
                   ProcessorsWithoutDDL)
 
 
 def find_tables_with_missing_files(views_path: str) -> Optional[str]:
-    check_results = (check(views_path).run()
-                     for check in enabled_checks)
+    check_results = [check(views_path).run()
+                     for check in enabled_checks]
 
     failed = (result for result in check_results if result)
 

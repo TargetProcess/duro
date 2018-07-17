@@ -41,7 +41,7 @@ def parse_filename(filename: str) -> Tuple:
 
 def list_files(views_path: str,
                match: Callable = lambda x: True,
-               mask: str = '*.sql') -> List:
+               mask: str = '*.*') -> List:
     return [file
             for file in glob.glob(views_path + f'/**/{mask}', recursive=True)
             if match(file)

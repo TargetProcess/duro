@@ -188,7 +188,7 @@ def test_load_select_query(views_path):
 
 
 def test_list_files(views_path):
-    sql_files = list_files(views_path)
+    sql_files = list_files(views_path, mask='*.sql')
     assert len(sql_files) == 7
     assert sql_files[1] == './views/first/cities_test.sql'
 

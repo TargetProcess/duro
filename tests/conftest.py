@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import sqlite3
+from pathlib import Path
 from shutil import copyfile
 
 import logzero
@@ -21,6 +22,26 @@ def copy_db(source, target='./copy.db') -> str:
 @pytest.fixture
 def views_path() -> str:
     return VIEWS_PATH
+
+
+@pytest.fixture
+def views_path_with_missing_files() -> str:
+    renames_short = [('cities — 24h.sql', 'citis — 24h.sql'),
+                     ('countries — 1h.sql', 'countris — 1h.sql'),
+                     ('countries_select.sql', 'countris_select.sql')
+                     ]
+
+    renames = [(Path(os.path.join(VIEWS_PATH, 'first', src)),
+                Path(os.path.join(VIEWS_PATH, 'first', dst)))
+               for src, dst in renames_short]
+
+    for src, dst in renames:
+        src.rename(dst)
+
+    yield VIEWS_PATH
+
+    for src, dst in renames:
+        dst.rename(src)
 
 
 @pytest.fixture
