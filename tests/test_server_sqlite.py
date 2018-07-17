@@ -4,6 +4,7 @@ from graph import build_graph
 from server.sqlite import (get_all_tables, get_jobs,
                            get_table_details, set_table_for_update,
                            propagate_force_flag, get_overview_stats)
+from utils.file_utils import load_tables_in_path
 
 
 def test_get_all_tables(db_cursor):
@@ -48,7 +49,8 @@ def test_get_overview_stats(db_connection):
 
 
 def test_propagate_force_flag(db_connection, views_path):
-    graph = build_graph(views_path)
+    tables = load_tables_in_path(views_path)
+    graph = build_graph(tables)
 
     propagate_force_flag(db_connection, 'first.cities', graph)
 

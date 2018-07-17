@@ -26,6 +26,10 @@ class RootsWithoutIntervalError(SchedulerError):
     """When a views dependency graph is not a DAG"""
 
 
+class TablesWithoutRequiredFiles(SchedulerError):
+    """When some tables miss files (like DDL for processors)"""
+
+
 class GitError(SchedulerError):
     """When we couldn’t fetch new commits"""
 

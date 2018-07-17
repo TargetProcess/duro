@@ -11,6 +11,7 @@ from scheduler.sqlite import (save_commit, build_table_configs,
                               update_table, create_tables_table,
                               should_be_updated, save_to_db)
 from scheduler.table_config import parse_permissions, parse_table_config
+from utils.file_utils import load_tables_in_path
 from utils.utils import Table
 
 
@@ -37,7 +38,8 @@ def test_save_and_read_commit(empty_db_str, empty_db_cursor):
 
 
 def test_build_graph(views_path):
-    graph = build_graph(views_path)
+    tables = load_tables_in_path(views_path)
+    graph = build_graph(tables)
     assert graph.nodes() == ['first.cities', 'first.countries',
                              'second.child', 'second.parent']
     assert graph.edges() == [('second.child', 'first.cities'),
@@ -50,7 +52,8 @@ def test_build_graph(views_path):
 
 
 def test_build_table_configs(views_path):
-    graph_with_queries = build_graph(views_path)
+    tables = load_tables_in_path(views_path)
+    graph_with_queries = build_graph(tables)
     configs = build_table_configs(graph_with_queries, views_path)
 
     second_parent = [t for t in configs
@@ -155,7 +158,8 @@ def test_insert_table(empty_db_cursor, views_path):
     assert row[3] is None
     assert row[7] == 1
 
-    graph_with_queries = build_graph(views_path)
+    tables = load_tables_in_path(views_path)
+    graph_with_queries = build_graph(tables)
     configs = build_table_configs(graph_with_queries, views_path)
     second_parent = [t for t in configs
                      if t.name == 'second.parent'][0]
@@ -207,7 +211,8 @@ def test_update_table(empty_db_cursor):
 
 
 def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
-    graph = build_graph(views_path)
+    tables = load_tables_in_path(views_path)
+    graph = build_graph(tables)
     save_to_db(graph, empty_db_str, views_path, None)
     empty_db_cursor.execute('''select * from tables 
                 where table_name = 'second.parent'

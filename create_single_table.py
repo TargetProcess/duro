@@ -20,7 +20,7 @@ def create_table(table: Table, views_path: str, verbose=False):
 
     connection = create_connection()
 
-    processor = load_processor(table.name, views_path)
+    processor = load_processor(views_path, table.name)
 
     if verbose:
         logger.info(f'Loaded processor: {processor}')
@@ -52,7 +52,7 @@ if __name__ == '__main__':
                         action='store_true')
     args = parser.parse_args()
     table = Table(name=args.table,
-                  query=load_query(args.table, args.path),
+                  query=load_query(args.path, args.table),
                   interval=None,
                   config=parse_table_config(args.table, args.path))
     create_table(table, args.path, args.verbose)

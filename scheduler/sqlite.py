@@ -47,7 +47,7 @@ def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:
                 insert_table(table, cursor)
                 new_tables.append(table.name)
 
-        return updated_tables, new_tables
+        return new_tables, updated_tables
 
     except sqlite3.OperationalError as e:
         if str(e).startswith('no such table'):

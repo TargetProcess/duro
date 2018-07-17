@@ -1,22 +1,48 @@
+from typing import List
+
 import networkx as nx
 
 from errors import (NotADAGError, RootsWithoutIntervalError,
-                    SchedulerError)
-from scheduler.graph import build_graph
+                    SchedulerError, TablesWithoutRequiredFiles)
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
+from scheduler.graph import build_graph, save_graph_to_file, check_for_cycles
 from scheduler.sqlite import save_to_db
-from utils.file_utils import find_tables_with_missing_files
+from utils.checks import find_tables_with_missing_files
+from utils.file_utils import load_tables_in_path
 from utils.global_config import load_global_config
 from utils.graph_utils import (find_roots_without_interval, detect_cycles,
                                copy_graph_without_attributes)
 from utils.logger import setup_logger
 
-
 logger = setup_logger('scheduler')
 
 
-def main(views_path: str, db_path: str, strict=False, use_git=False):
+def check_for_missing_intervals(graph: nx.DiGraph):
+    roots_without_interval = find_roots_without_interval(graph)
+
+    if roots_without_interval:
+        error = f'Some roots don’t have an interval specified. ' \
+                f'These roots are: {", ".join(roots_without_interval)}'
+        logger.error(error)
+        raise RootsWithoutIntervalError(error)
+
+
+def check_for_missing_files(views_path: str):
+    missing_file_errors = find_tables_with_missing_files(views_path)
+    if missing_file_errors:
+        errors_str = '\n'.join(missing_file_errors)
+        logger.error(errors_str)
+        raise TablesWithoutRequiredFiles(errors_str)
+
+
+def build_notification_message(new: List, updated: List) -> str:
+    new_str = f'New tables: {", ".join(new)}. ' if new else ''
+    updated_str = f'Updated tables: {", ".join(updated)}.' if updated else ''
+    return f'{new_str}{updated_str}'
+
+
+def schedule(views_path: str, db_path: str, strict=False, use_git=False):
     latest_commit = None
 
     if use_git:
@@ -26,54 +52,39 @@ def main(views_path: str, db_path: str, strict=False, use_git=False):
             logger.info('No new commits')
             return
 
-    tables_with_missing_files = find_tables_with_missing_files()
+    check_for_missing_files(views_path)
 
-    graph = build_graph(views_path)
+    tables_list = load_tables_in_path(views_path)
+
+    graph = build_graph(tables_list)
     logger.info(f'Built graph for {views_path}')
-    if strict:
-        valid, cycles = detect_cycles(graph)
-    else:
-        valid, cycles = True, None
-    nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
-    nx.nx_pydot.write_dot(
-        copy_graph_without_attributes(graph, ['contents', 'interval']),
-        'dependencies.dot')
+
+    save_graph_to_file(graph)
     logger.info(f'Saved graph to file')
 
-    if strict and not valid:
-        logger.error('Views dependency graph is not a DAG. Cycles detected:')
-        for cycle in cycles:
-            logger.error(sorted(cycle))
-        raise NotADAGError(f'Graph in {views_path} is not a DAG.')
+    if strict:
+        check_for_cycles(graph, logger)
+    check_for_missing_intervals(graph)
 
-    roots_without_interval = find_roots_without_interval(graph)
-
-    if roots_without_interval:
-        error = f'Some roots don’t have an interval specified. ' \
-                f'These roots are: {", ".join(roots_without_interval)}'
-        logger.error(error)
-        raise RootsWithoutIntervalError(error)
-
-    updated, new = save_to_db(graph, db_path, views_path, latest_commit)
-    updates = (f'New tables: {", ".join(new)}. ' if new else '') \
-        + (f'Updated tables: {", ".join(updated)}.' if updated else '')
+    new, updated = save_to_db(graph, db_path, views_path, latest_commit)
+    message = build_notification_message(new, updated)
 
     if use_git:
-        message = f'Rescheduled for commit {latest_commit}. {updates}'
+        logger.info(f'Rescheduled for commit {latest_commit}. {message}')
     else:
-        message = f'Rescheduled. {updates}'
-    logger.info(message)
+        logger.info(f'Rescheduled. {message}')
+
     if updated or new:
-        send_slack_notification(updates, 'Rescheduled views',
+        send_slack_notification(message, 'Rescheduled views',
                                 message_type='success')
 
 
 if __name__ == '__main__':
     global_config = load_global_config()
     try:
-        main(global_config.views_path,
-             global_config.db_path,
-             strict=False, use_git=False)
+        schedule(global_config.views_path,
+                 global_config.db_path,
+                 strict=False, use_git=False)
     except SchedulerError as e:
         send_slack_notification(str(e), 'Scheduler error')
         logger.error('Couldn‘t build a schedule for this views folder')

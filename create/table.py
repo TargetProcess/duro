@@ -25,7 +25,7 @@ def create_table(table: Table, db_path: str, views_path: str,
     connection = create_connection()
     ts.log('connect')
 
-    processor = load_processor(table.name, views_path)
+    processor = load_processor(views_path, table.name)
     if processor:
         creation_timestamp = process_and_upload_data(table, processor,
                                                      connection, ts,

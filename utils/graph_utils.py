@@ -19,9 +19,9 @@ def find_sources_without_attribute(graph: nx.DiGraph,
     return [root for root in roots if not nodes[root].get(attribute)]
 
 
-def detect_cycles(source_graph: nx.DiGraph) -> Tuple:
-    return nx.is_directed_acyclic_graph(source_graph), nx.simple_cycles(
-        source_graph)
+def detect_cycles(source_graph: nx.DiGraph) -> Tuple[bool, List]:
+    return (nx.is_directed_acyclic_graph(source_graph),
+            nx.simple_cycles(source_graph))
 
 
 def copy_graph_without_attributes(source_graph: nx.DiGraph,

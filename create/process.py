@@ -100,7 +100,7 @@ def upload_to_s3(filename: str):
 @log_action('build query to drop old table and a create a new one')
 def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     keys = load_dist_sort_keys(config)
-    create_query = load_ddl_query(table, views_path).rstrip(';\n')
+    create_query = load_ddl_query(views_path, table).rstrip(';\n')
     if 'diststyle' not in create_query:
         create_query += f'{keys.diststyle}\n'
     if 'distkey' not in create_query:
