@@ -60,7 +60,7 @@ def replace_old_table(table: str, connection):
         query_replace = f'''DROP TABLE IF EXISTS {table}_duro_old;
                 CREATE TABLE IF NOT EXISTS {table} (id int);
                 ALTER TABLE {table} RENAME TO {short_table_name}_duro_old;
-                ALTER TABLE {table}_temp RENAME TO {short_table_name};'''
+                ALTER TABLE {table}{temp_postfix} RENAME TO {short_table_name};'''
         cursor.execute(query_replace)
 
 

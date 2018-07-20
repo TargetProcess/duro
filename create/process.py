@@ -1,13 +1,12 @@
 import csv
 import gzip
 import importlib.machinery
-from logging import Logger
 from os import makedirs
 from typing import List, Dict, Tuple, Callable
 
 import arrow
 import psycopg2
-import tinys3
+import boto3
 
 from create.table_config import (load_dist_sort_keys,
                                  load_grant_select_statements)
@@ -19,7 +18,9 @@ from utils.logger import log_action
 from utils.utils import Table, temp_postfix
 
 
-def process_and_upload_data(table: Table, processor_name: str, connection,
+def process_and_upload_data(table: Table,
+                            processor_name: str,
+                            connection,
                             ts: Timestamps,
                             views_path: str) -> int:
     data = select_data(table.query, connection)
@@ -51,8 +52,7 @@ def process_and_upload_data(table: Table, processor_name: str, connection,
 
 
 @log_action('select data for processing')
-def select_data(query: str, connection, logger: Logger) -> List[Dict]:
-    logger.info('Selecting data')
+def select_data(query: str, connection) -> List[Dict]:
     with connection.cursor() as cursor:
         cursor.execute(query)
         columns = [desc[0] for desc in cursor.description]
@@ -91,13 +91,15 @@ def save_to_csv(data: List[Dict], columns: List, filename: str):
 
 @log_action('upload processed data to CSV')
 def upload_to_s3(filename: str):
-    connection = tinys3.Connection(s3_credentials()['aws_access_key_id'],
-                                   s3_credentials()['aws_secret_access_key'])
-    with open(filename, 'rb') as f:
-        connection.upload(filename, f, s3_credentials()['bucket'])
+    key_id, secret_key = s3_credentials()['aws_access_key_id'], s3_credentials()['aws_secret_access_key']
+    client = boto3.client('s3',
+                          aws_access_key_id=key_id,
+                          aws_secret_access_key=secret_key)
+
+    client.upload_file(filename, s3_credentials()['bucket'], filename)
 
 
-@log_action('build query to drop old table and a create a new one')
+@log_action('build query to drop old table and create a new one')
 def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     keys = load_dist_sort_keys(config)
     create_query = load_ddl_query(views_path, table).rstrip(';\n')
@@ -120,13 +122,15 @@ def copy_to_redshift(filename: str, table: str, connection,
             cursor.execute(drop_and_create_query)
             connection.commit()
             cursor.execute(f'''
-            COPY {table}{temp_postfix} FROM 's3://{s3_credentials()["bucket"]}/{filename}'
-            --region 'us-east-1'
-            access_key_id '{s3_credentials()["aws_access_key_id"]}'
-            secret_access_key '{s3_credentials()["aws_secret_access_key"]}'
-            delimiter ';'
-            ignoreheader 1
-            emptyasnull blanksasnull csv gzip;''')
+                COPY {table}{temp_postfix} 
+                FROM 's3://{s3_credentials()["bucket"]}/{filename}'
+                --region 'us-east-1'
+                access_key_id '{s3_credentials()["aws_access_key_id"]}'
+                secret_access_key '{s3_credentials()["aws_secret_access_key"]}'
+                delimiter ';'
+                ignoreheader 1
+                emptyasnull blanksasnull csv gzip;
+            ''')
             connection.commit()
             return arrow.now().timestamp
     except psycopg2.Error:

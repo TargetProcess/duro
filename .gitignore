@@ -11,3 +11,4 @@ views
 !tests/views
 *.yml
 duro.db
+venv

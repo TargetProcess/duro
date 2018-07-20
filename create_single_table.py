@@ -7,7 +7,7 @@ from create.redshift import (create_connection, drop_old_table,
                              create_temp_table)
 from create.timestamps import Timestamps
 from scheduler.table_config import parse_table_config
-from utils.file_utils import load_processor, load_query
+from utils.file_utils import load_processor, load_query, load_select_query
 from utils.logger import setup_logger
 from utils.utils import Table
 
@@ -51,8 +51,9 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', '-v', default=False, help='Verbose',
                         action='store_true')
     args = parser.parse_args()
+
     table = Table(name=args.table,
-                  query=load_query(args.path, args.table),
+                  query=load_select_query(args.path, args.table),
                   interval=None,
                   config=parse_table_config(args.table, args.path))
     create_table(table, args.path, args.verbose)
