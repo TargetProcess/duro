@@ -28,9 +28,8 @@ def check_for_missing_intervals(graph: nx.DiGraph):
 def check_for_missing_files(views_path: str):
     missing_file_errors = find_tables_with_missing_files(views_path)
     if missing_file_errors:
-        errors_str = "\n".join(missing_file_errors)
-        logger.error(errors_str)
-        raise TablesWithoutRequiredFiles(errors_str)
+        logger.error(missing_file_errors)
+        raise TablesWithoutRequiredFiles(missing_file_errors)
 
 
 def build_notification_message(new: List, updated: List) -> str:

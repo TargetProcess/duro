@@ -34,9 +34,7 @@ def create_table(table: Table, db_path: str, views_path: str, remaining_tables: 
             table, processor, connection, ts, views_path
         )
     else:
-        creation_timestamp = create_temp_table(
-            table.name, table.query, table.config, connection
-        )
+        creation_timestamp = create_temp_table(table, connection)
         ts.log("create_temp")
 
     tests = load_tests(table.name, views_path)

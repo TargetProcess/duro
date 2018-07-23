@@ -22,7 +22,7 @@ def create_connection():
 def create_temp_table(table: Table, connection) -> int:
     create_query = add_dist_sort_keys(table)
     grant_select = load_grant_select_statements(table.name, table.config)
-    full_query = f"""DROP TABLE IF EXISTS {table}{temp_postfix};
+    full_query = f"""DROP TABLE IF EXISTS {table.name}{temp_postfix};
                 {create_query};
                 {grant_select};
                 """
