@@ -121,7 +121,6 @@ def save_commit(commit: str, cursor):
                            (commit, arrow.now().timestamp))
         except sqlite3.OperationalError as e:
             if str(e).startswith('no such table'):
-                cursor.execute('''CREATE TABLE IF NOT EXISTS commits
                 cursor.execute('''
                   CREATE TABLE IF NOT EXISTS commits
                   (hash text, processed integer)
