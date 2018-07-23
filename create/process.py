@@ -35,7 +35,7 @@ def process_and_upload_data(table: Table,
     filename = f'{folder}/{table}-{current_time}.csv.gzip'
 
     makedirs(folder, exist_ok=True)
-    save_to_csv(data, columns, filename)
+    save_to_csv(processed_data, columns, filename)
     ts.log('csv')
 
     upload_to_s3(filename)
@@ -91,10 +91,9 @@ def save_to_csv(data: List[Dict], columns: List, filename: str):
 
 @log_action('upload processed data to CSV')
 def upload_to_s3(filename: str):
-    key_id, secret_key = s3_credentials()['aws_access_key_id'], s3_credentials()['aws_secret_access_key']
     client = boto3.client('s3',
-                          aws_access_key_id=key_id,
-                          aws_secret_access_key=secret_key)
+                          aws_access_key_id=s3_credentials()['aws_access_key_id'],
+                          aws_secret_access_key=s3_credentials()['aws_secret_access_key'])
 
     client.upload_file(filename, s3_credentials()['bucket'], filename)
 

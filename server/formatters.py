@@ -65,15 +65,14 @@ def format_seconds(time: Optional[int]) -> str:
             return f'{hours}h'
         return f'{hours}h {format_minutes(remainder)}'
 
-    if time > 86400:
-        days, remainder = time // 86400, time % 86400
-        if not remainder:
-            return f'{days}d'
-        hours, remainder = remainder // 3600, remainder % 3600
-        if not remainder:
-            return f'{days}d {hours}h'
+    days, remainder = time // 86400, time % 86400
+    if not remainder:
+        return f'{days}d'
+    hours, remainder = remainder // 3600, remainder % 3600
+    if not remainder:
+        return f'{days}d {hours}h'
 
-        return f'{days}d {hours}h {format_minutes(remainder)}'
+    return f'{days}d {hours}h {format_minutes(remainder)}'
 
 
 def format_interval(minutes: Optional[int]) -> str:

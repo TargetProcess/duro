@@ -20,15 +20,8 @@ def build_graph(tables: List) -> nx.DiGraph:
     return graph
 
 
-def draw_subgraphs(graph: nx.DiGraph):
-    subgraphs = nx.weakly_connected_component_subgraphs(graph)
-    counter = 1
-    for subgraph in subgraphs:
-        nx.nx_pydot.to_pydot(subgraph).write_png(f'graph{counter}.png')
-        counter += 1
-
-
 def save_graph_to_file(graph: nx.DiGraph):
+    # pylint: disable=no-member
     nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ['contents', 'interval']),

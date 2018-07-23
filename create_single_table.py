@@ -7,7 +7,7 @@ from create.redshift import (create_connection, drop_old_table,
                              create_temp_table)
 from create.timestamps import Timestamps
 from scheduler.table_config import parse_table_config
-from utils.file_utils import load_processor, load_query, load_select_query
+from utils.file_utils import load_processor, load_select_query
 from utils.logger import setup_logger
 from utils.utils import Table
 

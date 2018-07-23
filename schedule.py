@@ -2,7 +2,7 @@ from typing import List
 
 import networkx as nx
 
-from errors import (NotADAGError, RootsWithoutIntervalError,
+from errors import (RootsWithoutIntervalError,
                     SchedulerError, TablesWithoutRequiredFiles)
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
@@ -11,8 +11,7 @@ from scheduler.sqlite import save_to_db
 from utils.checks import find_tables_with_missing_files
 from utils.file_utils import load_tables_in_path
 from utils.global_config import load_global_config
-from utils.graph_utils import (find_roots_without_interval, detect_cycles,
-                               copy_graph_without_attributes)
+from utils.graph_utils import (find_roots_without_interval)
 from utils.logger import setup_logger
 
 logger = setup_logger('scheduler')

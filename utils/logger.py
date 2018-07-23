@@ -1,9 +1,8 @@
-import logging
 from functools import wraps
-from logging import Logger
-from typing import Callable
 from inspect import signature
+from logging import Logger, INFO
 from os import makedirs
+from typing import Callable
 
 import logzero
 
@@ -12,14 +11,14 @@ from utils.global_config import load_global_config
 
 def setup_logger(name: str = 'duro', stdout: bool = False) -> Logger:
     if stdout:
-        return logzero.setup_logger(name=name, level=logging.INFO)
+        return logzero.setup_logger(name=name, level=INFO)
 
     path = load_global_config().logs_path
     makedirs(path, exist_ok=True)
 
     logfile = f'{path}/{name}.log'
     return logzero.setup_logger(name=name, logfile=logfile,
-                                level=logging.INFO, maxBytes=1_000_000)
+                                level=INFO, maxBytes=1_000_000)
 
 
 def log_action(action: str, argument_name: str = 'table'):

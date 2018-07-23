@@ -7,6 +7,7 @@ from create.timestamps import Timestamps
 
 
 # noinspection PyUnresolvedReferences
+# pylint: disable=no-member
 def test_timestamps():
     ts = Timestamps()
     events = ['start', 'connect', 'select',

@@ -113,10 +113,6 @@ def has_processor(filename: str) -> bool:
     return os.path.isfile(processor_filename)
 
 
-def has_processor_select_query(filename: str) -> bool:
-    pass
-
-
 def list_tests(views_path: str) -> List[str]:
     files = list_files(views_path, match=is_test)
     short_filenames = [remove_view_path(views_path, filename)
