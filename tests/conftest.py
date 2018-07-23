@@ -9,12 +9,12 @@ import logzero
 import pytest
 from git import Repo
 
-DB_PATH = './test.db'
-PREPARED_DB_PATH = './test_data.db'
-VIEWS_PATH = './views'
+DB_PATH = "./test.db"
+PREPARED_DB_PATH = "./test_data.db"
+VIEWS_PATH = "./views"
 
 
-def copy_db(source, target='./copy.db') -> str:
+def copy_db(source, target="./copy.db") -> str:
     copyfile(source, target)
     return target
 
@@ -26,14 +26,19 @@ def views_path() -> str:
 
 @pytest.fixture
 def views_path_with_missing_files() -> str:
-    renames_short = [('cities — 24h.sql', 'citis — 24h.sql'),
-                     ('countries — 1h.sql', 'countris — 1h.sql'),
-                     ('countries_select.sql', 'countris_select.sql')
-                     ]
+    renames_short = [
+        ("cities — 24h.sql", "citis — 24h.sql"),
+        ("countries — 1h.sql", "countris — 1h.sql"),
+        ("countries_select.sql", "countris_select.sql"),
+    ]
 
-    renames = [(Path(os.path.join(VIEWS_PATH, 'first', src)),
-                Path(os.path.join(VIEWS_PATH, 'first', dst)))
-               for src, dst in renames_short]
+    renames = [
+        (
+            Path(os.path.join(VIEWS_PATH, "first", src)),
+            Path(os.path.join(VIEWS_PATH, "first", dst)),
+        )
+        for src, dst in renames_short
+    ]
 
     for src, dst in renames:
         src.rename(dst)
@@ -106,38 +111,38 @@ def db_cursor():
 
 @pytest.fixture
 def empty_git():
-    repo_name = 'empty repository'
+    repo_name = "empty repository"
     repo = Repo.init(repo_name)
     yield repo.working_dir
-    shutil.rmtree(f'./{repo_name}')
+    shutil.rmtree(f"./{repo_name}")
 
 
 @pytest.fixture
 def non_empty_git():
-    repo_name = 'repository'
+    repo_name = "repository"
     repo = Repo.init(repo_name)
-    files = ['first_file.sql', 'second_file.sql']
+    files = ["first_file.sql", "second_file.sql"]
     for index, f in enumerate(files):
-        open(os.path.join(repo_name, f), 'wb').close()
+        open(os.path.join(repo_name, f), "wb").close()
         repo.index.add([f])
-        repo.index.commit(f'commit #{index}')
+        repo.index.commit(f"commit #{index}")
     yield repo.working_dir
-    shutil.rmtree(f'./{repo_name}')
+    shutil.rmtree(f"./{repo_name}")
 
 
 @pytest.fixture
 def empty_config():
-    return 'configs/empty_config.conf'
+    return "configs/empty_config.conf"
 
 
 @pytest.fixture
 def full_config():
-    return 'configs/full_config.conf'
+    return "configs/full_config.conf"
 
 
 @pytest.fixture
 def partial_config():
-    return 'configs/partial_config.conf'
+    return "configs/partial_config.conf"
 
 
 def similar_query(first_query: str, second_query: str, *args):
@@ -149,7 +154,7 @@ def similar_query(first_query: str, second_query: str, *args):
     if all(q is None for q in queries):
         return True
 
-    single_lines = [re.sub('[ \t\n]', '', query) for query in queries]
+    single_lines = [re.sub("[ \t\n]", "", query) for query in queries]
 
     return all(query == single_lines[0] for query in single_lines[1:])
 

@@ -15,22 +15,26 @@ def get_all_commits(folder: str) -> List[str]:
 
         return []
     except InvalidGitRepositoryError:
-        raise GitError(f'No git repository in {folder}')
+        raise GitError(f"No git repository in {folder}")
 
 
 def get_previous_commit(db: str) -> str:
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS commits
-                            (hash text, processed integer)''')
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS commits
+                            (hash text, processed integer)"""
+    )
     connection.commit()
 
-    cursor.execute('''SELECT hash FROM commits
-                    ORDER BY processed DESC LIMIT 1''')
+    cursor.execute(
+        """SELECT hash FROM commits
+                    ORDER BY processed DESC LIMIT 1"""
+    )
     result = cursor.fetchone()
 
-    return result[0] if result is not None else ''
+    return result[0] if result is not None else ""
 
 
 def get_latest_new_commit(commits: List, db: str) -> Optional[str]:

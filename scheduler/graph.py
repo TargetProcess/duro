@@ -14,25 +14,27 @@ def build_graph(tables: List) -> nx.DiGraph:
     nodes_list = graph.nodes()
     for node, query in graph.nodes_iter(data=True):
         for other_node in nodes_list:
-            if re.search(r'\b' + re.escape(other_node) + r'\b',
-                         query.get('contents')):
+            if re.search(r"\b" + re.escape(other_node) + r"\b", query.get("contents")):
                 graph.add_edge(node, other_node)
     return graph
 
 
 def save_graph_to_file(graph: nx.DiGraph):
     # pylint: disable=no-member
-    nx.nx_pydot.to_pydot(graph).write_png('dependencies.png')
+    nx.nx_pydot.to_pydot(graph).write_png("dependencies.png")
     nx.nx_pydot.write_dot(
-        copy_graph_without_attributes(graph, ['contents', 'interval']),
-        'dependencies.dot')
+        copy_graph_without_attributes(graph, ["contents", "interval"]),
+        "dependencies.dot",
+    )
 
 
 def check_for_cycles(graph: nx.DiGraph, logger: Logger):
     valid, cycles = detect_cycles(graph)
     if not valid:
-        logger.error('Views dependency graph is not a DAG. Cycles detected:')
+        logger.error("Views dependency graph is not a DAG. Cycles detected:")
         for cycle in cycles:
             logger.error(sorted(cycle))
-        raise NotADAGError(f'Graph in is not a DAG. Number of cycles: {len(cycles)}. '
-                           f'First cycle: {cycles[0]}')
+        raise NotADAGError(
+            f"Graph in is not a DAG. Number of cycles: {len(cycles)}. "
+            f"First cycle: {cycles[0]}"
+        )

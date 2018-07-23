@@ -1,4 +1,4 @@
-columns = ['city', 'country']
+columns = ["city", "country"]
 
 
 def process(data):

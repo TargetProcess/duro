@@ -13,43 +13,42 @@ logger = setup_logger()
 def load_tests(table: str, path: str) -> str:
     has_tests, tests_file = find_tests(table, path)
     if not has_tests:
-        logger.info(f'No tests for {table}')
-        return ''
+        logger.info(f"No tests for {table}")
+        return ""
 
-    logger.info(f'Tests file found for {table}')
-    return read_file(tests_file).replace(f'{table}', f'{table}{temp_postfix}')
+    logger.info(f"Tests file found for {table}")
+    return read_file(tests_file).replace(f"{table}", f"{table}{temp_postfix}")
 
 
 def find_tests(table: str, path: str) -> Tuple[bool, str]:
-    folder, file = table.split('.')
+    folder, file = table.split(".")
 
-    inside_folder_file = os.path.join(path, folder, f'{file}_test.sql')
+    inside_folder_file = os.path.join(path, folder, f"{file}_test.sql")
     if os.path.isfile(inside_folder_file):
         return True, inside_folder_file
 
-    outside_folder_file = os.path.join(path, f'{table}_test.sql')
+    outside_folder_file = os.path.join(path, f"{table}_test.sql")
     if os.path.isfile(outside_folder_file):
         return True, outside_folder_file
 
-    return False, ''
+    return False, ""
 
 
-@log_action('run tests')
+@log_action("run tests")
 def run_tests(tests_queries: str, connection) -> TestResults:
     if not tests_queries:
         return True, None
 
     with connection.cursor() as cursor:
-        queries = (q for q in tests_queries.split(';') if len(q) > 0)
+        queries = (q for q in tests_queries.split(";") if len(q) > 0)
         results = []
         for query in queries:
             cursor.execute(query)
-            results.append((cursor.description[0].name,
-                            cursor.fetchone()[0]))
+            results.append((cursor.description[0].name, cursor.fetchone()[0]))
 
     passed, failed_columns = parse_tests_results(results)
     if failed_columns:
-        logger.info(f'Failed tests: {failed_columns}')
+        logger.info(f"Failed tests: {failed_columns}")
     return passed, failed_columns
 
 

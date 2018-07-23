@@ -4,13 +4,18 @@ from typing import List
 import arrow
 import networkx as nx
 
-from create.sqlite import (load_table_details, is_running, reset_start,
-                           get_average_completion_time, get_time_running,
-                           is_waiting,
-                           mark_table_as_not_waiting, mark_table_as_waiting)
+from create.sqlite import (
+    load_table_details,
+    is_running,
+    reset_start,
+    get_average_completion_time,
+    get_time_running,
+    is_waiting,
+    mark_table_as_not_waiting,
+    mark_table_as_waiting,
+)
 from create.table import create_table
-from errors import (MaterializationError,
-                    TableNotFoundInGraphError)
+from errors import MaterializationError, TableNotFoundInGraphError
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
 from utils.logger import setup_logger
@@ -19,8 +24,12 @@ from utils.utils import Table
 logger = setup_logger()
 
 
-def create_tree(root: str, global_config: GlobalConfig,
-                interval: int = None, remaining_tables: int = 1):
+def create_tree(
+    root: str,
+    global_config: GlobalConfig,
+    interval: int = None,
+    remaining_tables: int = 1,
+):
     db = global_config.db_path
     table = load_table_details(db, root)
     table.interval = table.interval or interval
@@ -30,24 +39,24 @@ def create_tree(root: str, global_config: GlobalConfig,
 
     children = list_children_for_table(root, global_config.graph)
     remaining_tables += len(children)
-    logger.info(f'Tables remaining: {remaining_tables}')
+    logger.info(f"Tables remaining: {remaining_tables}")
 
     create_children(children, global_config, remaining_tables, table)
 
     try:
-        logger.info(f'Creating {table.name}')
-        create_table(table, db, global_config.views_path,
-                     remaining_tables)
+        logger.info(f"Creating {table.name}")
+        create_table(table, db, global_config.views_path, remaining_tables)
     except MaterializationError as e:
         logger.error(e)
         reset_start(db, table.name)
-        send_slack_notification(str(e), f'Error while creating {table.name}')
+        send_slack_notification(str(e), f"Error while creating {table.name}")
 
 
-def create_children(children: List, global_config: GlobalConfig,
-                    remaining_tables: int, table: Table):
+def create_children(
+    children: List, global_config: GlobalConfig, remaining_tables: int, table: Table
+):
     if children:
-        logger.info(f'Creating children for {table.name}')
+        logger.info(f"Creating children for {table.name}")
 
     for child in children:
         mark_table_as_waiting(global_config.db_path, table.name)
@@ -58,49 +67,49 @@ def create_children(children: List, global_config: GlobalConfig,
 def list_children_for_table(root: str, graph: nx.DiGraph) -> List:
     try:
         children = list(graph[root].keys())
-        logger.info(f'Children of {root}: {children}')
+        logger.info(f"Children of {root}: {children}")
         return children
     except KeyError as e:
         raise TableNotFoundInGraphError(e)
 
 
-def should_be_created(table: Table, db_path: str,
-                      remaining_tables: int) -> bool:
+def should_be_created(table: Table, db_path: str, remaining_tables: int) -> bool:
     waiting, waiting_too_long = is_waiting(db_path, table.name)
 
     if waiting and not waiting_too_long:
         logger.info(
-            f'{table.name} is waiting for its children to be updated, won’t be updated now')
+            f"{table.name} is waiting for its children to be updated, won’t be updated now"
+        )
         return False
 
     if waiting_too_long:
-        logger.info(f'{table.name} can’t be waiting for so long, resetting the flag')
+        logger.info(f"{table.name} can’t be waiting for so long, resetting the flag")
         mark_table_as_not_waiting(db_path, table.name)
 
     if is_running(db_path, table.name):
-        logger.info('Already running, waiting till done')
+        logger.info("Already running, waiting till done")
         finished = wait_till_finished(db_path, table.name)
 
         if finished:
             remaining_tables -= 1
-            logger.info(f'Tables remaining: {remaining_tables}')
+            logger.info(f"Tables remaining: {remaining_tables}")
             return False
 
     if table.force:
-        logger.info(f'Force flag is set for {table.name}, will be updated now')
+        logger.info(f"Force flag is set for {table.name}, will be updated now")
         return True
 
     if table.last_created is None or table.interval is None:
-        logger.info(f'{table.name} is fresh enough, won’t be updated now')
+        logger.info(f"{table.name} is fresh enough, won’t be updated now")
         return True
 
     time_since_last_created = arrow.now() - arrow.get(table.last_created)
     fresh = (time_since_last_created.total_seconds() / 60) <= table.interval
 
     if fresh:
-        logger.info(f'{table.name} is fresh enough')
+        logger.info(f"{table.name} is fresh enough")
         remaining_tables -= 1
-        logger.info(f'Tables remaining: {remaining_tables}')
+        logger.info(f"Tables remaining: {remaining_tables}")
         return False
 
     return True
@@ -109,15 +118,15 @@ def should_be_created(table: Table, db_path: str,
 def wait_till_finished(db_str: str, table: str) -> bool:
     timeout = 10
     average_time = get_average_completion_time(db_str, table)
-    logger.info(f'Average completion time: {average_time}')
+    logger.info(f"Average completion time: {average_time}")
     while True:
         time.sleep(timeout)
         time_running = get_time_running(db_str, table)
         if time_running is None:
-            logger.info('Waited until completion')
+            logger.info("Waited until completion")
             return True
         if time_running > average_time * 5:
-            logger.info('Can’t be running for so long, resetting')
+            logger.info("Can’t be running for so long, resetting")
             reset_start(db_str, table)
             return False
-        logger.info(f'Runs for {time_running} seconds')
+        logger.info(f"Runs for {time_running} seconds")

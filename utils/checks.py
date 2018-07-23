@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Iterable
 
-from utils.file_utils import (load_query, list_processors,
-                              load_select_query, list_tests,
-                              test_postfix, load_ddl_query)
+from utils.file_utils import (
+    load_query,
+    list_processors,
+    load_select_query,
+    list_tests,
+    test_postfix,
+    load_ddl_query,
+)
 
 
 class Check(ABC):
@@ -45,15 +50,14 @@ class Check(ABC):
 class TestsWithoutQuery(Check):
     def _list_tables(self):
         tests = list_tests(self.views_path)
-        return (t.replace(f'{test_postfix}', '')
-                for t in tests)
+        return (t.replace(f"{test_postfix}", "") for t in tests)
 
     def check(self, table):
         return load_query(self.views_path, table)
 
     @property
     def message(self) -> str:
-        return 'Some tables have tests, but not a SELECT query'
+        return "Some tables have tests, but not a SELECT query"
 
 
 class ProcessorsWithoutSelect(Check):
@@ -65,7 +69,7 @@ class ProcessorsWithoutSelect(Check):
 
     @property
     def message(self) -> str:
-        return 'Some processors don’t have a SELECT query'
+        return "Some processors don’t have a SELECT query"
 
 
 class ProcessorsWithoutDDL(Check):
@@ -77,18 +81,15 @@ class ProcessorsWithoutDDL(Check):
 
     @property
     def message(self) -> str:
-        return 'Some processors don’t have a CREATE TABLE query'
+        return "Some processors don’t have a CREATE TABLE query"
 
 
-enabled_checks = (TestsWithoutQuery,
-                  ProcessorsWithoutSelect,
-                  ProcessorsWithoutDDL)
+enabled_checks = (TestsWithoutQuery, ProcessorsWithoutSelect, ProcessorsWithoutDDL)
 
 
 def find_tables_with_missing_files(views_path: str) -> Optional[str]:
-    check_results = [check(views_path).run()
-                     for check in enabled_checks]
+    check_results = [check(views_path).run() for check in enabled_checks]
 
     failed = (result for result in check_results if result)
 
-    return '\n'.join(failed)
+    return "\n".join(failed)

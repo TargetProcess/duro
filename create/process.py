@@ -8,8 +8,7 @@ import arrow
 import psycopg2
 import boto3
 
-from create.table_config import (load_dist_sort_keys,
-                                 load_grant_select_statements)
+from create.table_config import load_dist_sort_keys, load_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
 from errors import ProcessorNotFoundError, RedshiftCopyError
@@ -18,40 +17,39 @@ from utils.logger import log_action
 from utils.utils import Table, temp_postfix
 
 
-def process_and_upload_data(table: Table,
-                            processor_name: str,
-                            connection,
-                            ts: Timestamps,
-                            views_path: str) -> int:
+def process_and_upload_data(
+    table: Table, processor_name: str, connection, ts: Timestamps, views_path: str
+) -> int:
     data = select_data(table.query, connection)
-    ts.log('select')
+    ts.log("select")
 
     processing_function, columns = load_processor(processor_name)
     processed_data, columns = process_data(data, processing_function, columns)
-    ts.log('process')
+    ts.log("process")
 
     folder = s3_credentials()["folder"]
     current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
-    filename = f'{folder}/{table}-{current_time}.csv.gzip'
+    filename = f"{folder}/{table}-{current_time}.csv.gzip"
 
     makedirs(folder, exist_ok=True)
     save_to_csv(processed_data, columns, filename)
-    ts.log('csv')
+    ts.log("csv")
 
     upload_to_s3(filename)
-    ts.log('s3')
+    ts.log("s3")
 
-    drop_and_create_query = build_drop_and_create_query(table.name,
-                                                        table.config,
-                                                        views_path)
-    timestamp = copy_to_redshift(filename, table.name, connection,
-                                 drop_and_create_query)
-    ts.log('insert')
+    drop_and_create_query = build_drop_and_create_query(
+        table.name, table.config, views_path
+    )
+    timestamp = copy_to_redshift(
+        filename, table.name, connection, drop_and_create_query
+    )
+    ts.log("insert")
 
     return timestamp
 
 
-@log_action('select data for processing')
+@log_action("select data for processing")
 def select_data(query: str, connection) -> List[Dict]:
     with connection.cursor() as cursor:
         cursor.execute(query)
@@ -59,11 +57,10 @@ def select_data(query: str, connection) -> List[Dict]:
         return [dict(zip(columns, row)) for row in cursor]
 
 
-@log_action('load processing function from processor module')
+@log_action("load processing function from processor module")
 def load_processor(processor: str) -> Tuple:
     try:
-        loader = importlib.machinery.SourceFileLoader(processor,
-                                                      processor)
+        loader = importlib.machinery.SourceFileLoader(processor, processor)
 
         # pylint: disable=deprecated-method
         processor_module = loader.load_module()
@@ -72,55 +69,59 @@ def load_processor(processor: str) -> Tuple:
         raise ProcessorNotFoundError(processor)
 
 
-@log_action('process data')
-def process_data(data: List[Dict],
-                 processing_function: Callable,
-                 columns: List) -> Tuple[List[Dict], List]:
+@log_action("process data")
+def process_data(
+    data: List[Dict], processing_function: Callable, columns: List
+) -> Tuple[List[Dict], List]:
     return processing_function(data), columns
 
 
-@log_action('save processed data to CSV')
+@log_action("save processed data to CSV")
 def save_to_csv(data: List[Dict], columns: List, filename: str):
-    with gzip.open(filename, 'wt', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file,
-                                     columns,
-                                     delimiter=';', escapechar='\\')
+    with gzip.open(filename, "wt", newline="") as output_file:
+        dict_writer = csv.DictWriter(
+            output_file, columns, delimiter=";", escapechar="\\"
+        )
         dict_writer.writeheader()
         dict_writer.writerows(data)
 
 
-@log_action('upload processed data to CSV')
+@log_action("upload processed data to CSV")
 def upload_to_s3(filename: str):
-    client = boto3.client('s3',
-                          aws_access_key_id=s3_credentials()['aws_access_key_id'],
-                          aws_secret_access_key=s3_credentials()['aws_secret_access_key'])
+    client = boto3.client(
+        "s3",
+        aws_access_key_id=s3_credentials()["aws_access_key_id"],
+        aws_secret_access_key=s3_credentials()["aws_secret_access_key"],
+    )
 
-    client.upload_file(filename, s3_credentials()['bucket'], filename)
+    client.upload_file(filename, s3_credentials()["bucket"], filename)
 
 
-@log_action('build query to drop old table and create a new one')
+@log_action("build query to drop old table and create a new one")
 def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     keys = load_dist_sort_keys(config)
-    create_query = load_ddl_query(views_path, table).rstrip(';\n')
-    if 'diststyle' not in create_query:
-        create_query += f'{keys.diststyle}\n'
-    if 'distkey' not in create_query:
-        create_query += f'{keys.distkey}\n'
-    if 'sortkey' not in create_query:
-        create_query += f'{keys.sortkey}\n'
+    create_query = load_ddl_query(views_path, table).rstrip(";\n")
+    if "diststyle" not in create_query:
+        create_query += f"{keys.diststyle}\n"
+    if "distkey" not in create_query:
+        create_query += f"{keys.distkey}\n"
+    if "sortkey" not in create_query:
+        create_query += f"{keys.sortkey}\n"
 
     grant_select = load_grant_select_statements(table, config)
-    return f'DROP TABLE IF EXISTS {table}{temp_postfix}; {create_query}; {grant_select}'
+    return f"DROP TABLE IF EXISTS {table}{temp_postfix}; {create_query}; {grant_select}"
 
 
-@log_action('insert processed data into Redshift table')
-def copy_to_redshift(filename: str, table: str, connection,
-                     drop_and_create_query: str) -> int:
+@log_action("insert processed data into Redshift table")
+def copy_to_redshift(
+    filename: str, table: str, connection, drop_and_create_query: str
+) -> int:
     try:
         with connection.cursor() as cursor:
             cursor.execute(drop_and_create_query)
             connection.commit()
-            cursor.execute(f'''
+            cursor.execute(
+                f"""
                 COPY {table}{temp_postfix} 
                 FROM 's3://{s3_credentials()["bucket"]}/{filename}'
                 --region 'us-east-1'
@@ -129,7 +130,8 @@ def copy_to_redshift(filename: str, table: str, connection,
                 delimiter ';'
                 ignoreheader 1
                 emptyasnull blanksasnull csv gzip;
-            ''')
+            """
+            )
             connection.commit()
             return arrow.now().timestamp
     except psycopg2.Error:

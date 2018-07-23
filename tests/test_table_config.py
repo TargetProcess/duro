@@ -1,55 +1,64 @@
 import pytest
 
 from create.sqlite import load_table_details
-from create.table_config import (load_dist_sort_keys, add_dist_sort_keys,
-                                 load_grant_select_statements)
+from create.table_config import (
+    load_dist_sort_keys,
+    add_dist_sort_keys,
+    load_grant_select_statements,
+)
 
 
 def test_load_dist_sort_keys(db_str):
-    child = load_table_details(db_str, 'second.child')
+    child = load_table_details(db_str, "second.child")
     keys = load_dist_sort_keys(child.config)
     assert keys.distkey == 'distkey("city")'
-    assert keys.diststyle == 'diststyle all'
-    assert keys.sortkey == ''
+    assert keys.diststyle == "diststyle all"
+    assert keys.sortkey == ""
 
-    parent = load_table_details(db_str, 'second.parent')
+    parent = load_table_details(db_str, "second.parent")
     keys = load_dist_sort_keys(parent.config)
-    assert keys.distkey == ''
-    assert keys.diststyle == 'diststyle even'
-    assert keys.sortkey == ''
+    assert keys.distkey == ""
+    assert keys.diststyle == "diststyle even"
+    assert keys.sortkey == ""
 
     empty = load_dist_sort_keys({})
-    assert empty.distkey == ''
-    assert empty.diststyle == ''
-    assert empty.sortkey == ''
+    assert empty.distkey == ""
+    assert empty.diststyle == ""
+    assert empty.sortkey == ""
 
 
 # noinspection PyUnresolvedReferences
 def test_add_dist_sort_keys(db_str):
-    child = load_table_details(db_str, 'second.child')
+    child = load_table_details(db_str, "second.child")
     query = add_dist_sort_keys(child)
-    assert pytest.similar(query, '''
+    assert pytest.similar(
+        query,
+        """
         CREATE TABLE second.child_duro_temp
         distkey("city")  diststyle all
-        AS (select city, country from first.cities);''')
+        AS (select city, country from first.cities);""",
+    )
 
-    child = load_table_details(db_str, 'second.parent')
+    child = load_table_details(db_str, "second.parent")
     query = add_dist_sort_keys(child)
-    assert pytest.similar(query, '''
+    assert pytest.similar(
+        query,
+        """
         CREATE TABLE second.parent_duro_temp diststyle even
-        AS (select * from second.child limit 10);''')
+        AS (select * from second.child limit 10);""",
+    )
 
 
 # noinspection PyUnresolvedReferences
 def test_load_grant_select_statements(db_str):
-    child = load_table_details(db_str, 'second.child')
+    child = load_table_details(db_str, "second.child")
     grant = load_grant_select_statements(child.name, child.config)
-    assert grant == ''
+    assert grant == ""
 
-    cities = load_table_details(db_str, 'first.cities')
+    cities = load_table_details(db_str, "first.cities")
     grant = load_grant_select_statements(cities.name, cities.config)
-    assert grant == 'GRANT SELECT ON first.cities_duro_temp TO jane, john'
+    assert grant == "GRANT SELECT ON first.cities_duro_temp TO jane, john"
 
-    countries = load_table_details(db_str, 'first.countries')
+    countries = load_table_details(db_str, "first.countries")
     grant = load_grant_select_statements(countries.name, countries.config)
-    assert grant == 'GRANT SELECT ON first.countries_duro_temp TO joan, john'
+    assert grant == "GRANT SELECT ON first.countries_duro_temp TO joan, john"

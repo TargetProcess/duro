@@ -20,17 +20,21 @@ def find_and_run_new_jobs(db_path: str):
     #                       trigger=DateTrigger(run_date=dt.now()))
     for table in get_tables_to_create(db_path)[:2]:
         print(table)
-        sub_scheduler.add_job(create, args=[table[0], bool(table[1])],
-                              trigger=DateTrigger(run_date=dt.now()))
+        sub_scheduler.add_job(
+            create,
+            args=[table[0], bool(table[1])],
+            trigger=DateTrigger(run_date=dt.now()),
+        )
     sub_scheduler.start()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('config.conf')
-    db_path = config['main'].get('db', './duro.db')
+    config.read("config.conf")
+    db_path = config["main"].get("db", "./duro.db")
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(find_and_run_new_jobs, 'interval', seconds=60, args=[db_path])
+    scheduler.add_job(find_and_run_new_jobs, "interval", seconds=60, args=[db_path])
     # scheduler.add_job(find_and_run_new_jobs, trigger=DateTrigger(run_date=dt.now()),
     #                   args=[db_path])
     scheduler.start()
