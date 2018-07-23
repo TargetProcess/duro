@@ -91,14 +91,15 @@ def should_be_updated(table: Table, cursor) -> bool:
 
 def update_table(table: Table, cursor) -> Optional[str]:
     if should_be_updated(table, cursor):
-        cursor.execute('''UPDATE tables
-                        SET query = ?, 
-                            interval = ?, 
-                            config = ?, 
-                            force = 1
-                        WHERE table_name = ?''',
-                       (table.query, table.interval,
-                        table.config_json, table.name))
+        cursor.execute('''
+            UPDATE tables
+            SET query = ?, 
+                interval = ?, 
+                config = ?, 
+                force = 1
+            WHERE table_name = ?
+            ''', (table.query, table.interval,
+                  table.config_json, table.name))
         return table.name
 
     return None
@@ -121,7 +122,10 @@ def save_commit(commit: str, cursor):
         except sqlite3.OperationalError as e:
             if str(e).startswith('no such table'):
                 cursor.execute('''CREATE TABLE IF NOT EXISTS commits
-                                            (hash text, processed integer)''')
+                cursor.execute('''
+                  CREATE TABLE IF NOT EXISTS commits
+                  (hash text, processed integer)
+                ''')
                 save_commit(commit, cursor)
             else:
                 raise
@@ -130,6 +134,9 @@ def save_commit(commit: str, cursor):
 def mark_deleted_tables(tables_and_queries: List[Table], cursor):
     tables = tuple(table.name for table in tables_and_queries)
     cursor.execute(f'''UPDATE tables
-                    SET deleted = strftime('%s', 'now')
+                    SET deleted = strftime('%s', 'now'),
+                        started = NULL,
+                        waiting = NULL,
+                        force = NULL
                     WHERE table_name NOT IN {str(tables)}
-                    AND deleted IS NULL''')
+                        AND deleted IS NULL''')
