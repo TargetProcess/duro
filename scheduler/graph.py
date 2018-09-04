@@ -1,10 +1,10 @@
-import re
 from logging import Logger
 from typing import List
 
 import networkx as nx
 
 from errors import NotADAGError
+from query import is_table_used_in_query
 from utils.graph_utils import copy_graph_without_attributes, detect_cycles
 
 
@@ -14,7 +14,7 @@ def build_graph(tables: List) -> nx.DiGraph:
     nodes_list = graph.nodes()
     for node, query in graph.nodes_iter(data=True):
         for other_node in nodes_list:
-            if re.search(r"\b" + re.escape(other_node) + r"\b", query.get("contents")):
+            if is_table_used_in_query(other_node, query.get("contents")):
                 graph.add_edge(node, other_node)
     return graph
 
