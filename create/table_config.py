@@ -4,6 +4,9 @@ from utils.utils import DistSortKeys, Table, temp_postfix
 
 
 def load_dist_sort_keys(config: Dict) -> DistSortKeys:
+    if not config:
+        return DistSortKeys("", "", "")
+
     distkey = f'distkey("{config["distkey"]}")' if config.get("distkey") else ""
     diststyle = f'diststyle {config["diststyle"]}' if config.get("diststyle") else ""
     sortkey = f'sortkey("{config["sortkey"]}")' if config.get("sortkey") else ""
@@ -23,6 +26,9 @@ def add_dist_sort_keys(table: Table) -> str:
 
 
 def load_grant_select_statements(table: str, config: Dict) -> str:
+    if not config:
+        return ""
+
     users = config.get("grant_select")
     if users is not None:
         return f"""GRANT SELECT ON {table}{temp_postfix} TO {config['grant_select']}"""

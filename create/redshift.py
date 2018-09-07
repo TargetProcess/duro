@@ -22,10 +22,11 @@ def create_connection():
 def create_temp_table(table: Table, connection) -> int:
     create_query = add_dist_sort_keys(table)
     grant_select = load_grant_select_statements(table.name, table.config)
-    full_query = f"""DROP TABLE IF EXISTS {table.name}{temp_postfix};
-                {create_query};
-                {grant_select};
-                """
+    full_query = f"""
+        DROP TABLE IF EXISTS {table.name}{temp_postfix};
+        {create_query}
+        {grant_select};
+        """
     try:
         with connection.cursor() as cursor:
             cursor.execute(full_query)
@@ -36,7 +37,7 @@ def create_temp_table(table: Table, connection) -> int:
 
 @log_action("drop temporary table")
 def drop_temp_table(table: str, connection):
-    drop_table(f"{table}_temp", connection)
+    drop_table(f"{table}{temp_postfix}", connection)
 
 
 @log_action("drop old table")
@@ -57,10 +58,12 @@ def replace_old_table(table: str, connection):
     drop_view(table, connection)
 
     with connection.cursor() as cursor:
-        query_replace = f"""DROP TABLE IF EXISTS {table}_duro_old;
-                CREATE TABLE IF NOT EXISTS {table} (id int);
-                ALTER TABLE {table} RENAME TO {short_table_name}_duro_old;
-                ALTER TABLE {table}{temp_postfix} RENAME TO {short_table_name};"""
+        query_replace = f"""
+            DROP TABLE IF EXISTS {table}_duro_old;
+            CREATE TABLE IF NOT EXISTS {table} (id int);
+            ALTER TABLE {table} RENAME TO {short_table_name}_duro_old;
+            ALTER TABLE {table}{temp_postfix} RENAME TO {short_table_name};
+            """
         cursor.execute(query_replace)
 
 

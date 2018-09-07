@@ -9,6 +9,8 @@ import logzero
 import pytest
 from git import Repo
 
+from utils.utils import Table
+
 DB_PATH = "./test.db"
 PREPARED_DB_PATH = "./test_data.db"
 VIEWS_PATH = "./views"
@@ -145,7 +147,24 @@ def partial_config():
     return "configs/partial_config.conf"
 
 
-def similar_query(first_query: str, second_query: str, *args):
+@pytest.fixture
+def table():
+    return Table(
+        name="first.cities",
+        query="select * from first.countries",
+        interval=None,
+        config={"grant_select": "user_one", "distkey": "continent"},
+    )
+
+
+@pytest.fixture
+def table_without_config():
+    return Table(
+        name="first.cities", query="select * from first.countries", interval=None
+    )
+
+
+def similar_query(first_query: str, second_query: str, *args) -> bool:
     """
     True if all strings are the same after we remove all spaces,
     tabs, and newlines.
