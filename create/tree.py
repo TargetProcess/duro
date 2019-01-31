@@ -34,7 +34,7 @@ def create_tree(
     table = load_table_details(db, root)
     table.interval = table.interval or interval
 
-    if not should_be_created(table, db, remaining_tables):
+    if not should_be_created(db, table, remaining_tables):
         return
 
     children = list_children_for_table(root, global_config.graph)
@@ -73,7 +73,7 @@ def list_children_for_table(root: str, graph: nx.DiGraph) -> List:
         raise TableNotFoundInGraphError(e)
 
 
-def should_be_created(table: Table, db_path: str, remaining_tables: int) -> bool:
+def should_be_created(db_path: str, table: Table, remaining_tables: int) -> bool:
     waiting, waiting_too_long = is_waiting(db_path, table.name)
 
     if waiting and not waiting_too_long:
@@ -115,8 +115,7 @@ def should_be_created(table: Table, db_path: str, remaining_tables: int) -> bool
     return True
 
 
-def wait_till_finished(db_str: str, table: str) -> bool:
-    timeout = 10
+def wait_till_finished(db_str: str, table: str, timeout: int = 10) -> bool:
     average_time = get_average_completion_time(db_str, table)
     logger.info(f"Average completion time: {average_time}")
     while True:
@@ -125,7 +124,7 @@ def wait_till_finished(db_str: str, table: str) -> bool:
         if time_running is None:
             logger.info("Waited until completion")
             return True
-        if time_running > average_time * 5:
+        if average_time and time_running > average_time * 5:
             logger.info("Can’t be running for so long, resetting")
             reset_start(db_str, table)
             return False
