@@ -73,7 +73,7 @@ def list_children_for_table(root: str, graph: nx.DiGraph) -> List:
         raise TableNotFoundInGraphError(e)
 
 
-def should_be_created(db_path: str, table: Table, remaining_tables: int) -> bool:
+def should_be_created(db_path: str, table: Table, remaining_tables: int = 0) -> bool:
     waiting, waiting_too_long = is_waiting(db_path, table.name)
 
     if waiting and not waiting_too_long:
@@ -117,6 +117,10 @@ def should_be_created(db_path: str, table: Table, remaining_tables: int) -> bool
 
 def wait_till_finished(db_str: str, table: str, timeout: int = 10) -> bool:
     average_time = get_average_completion_time(db_str, table)
+    if not average_time:
+        logger.info(f"No stats for this table yet, not waiting for completion")
+        reset_start(db_str, table)
+        return False
     logger.info(f"Average completion time: {average_time}")
     while True:
         time.sleep(timeout)
