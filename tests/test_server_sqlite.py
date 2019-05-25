@@ -40,7 +40,7 @@ def test_get_table_details(db_cursor):
 
 
 def test_get_overview_stats(db_connection):
-    assert get_overview_stats(db_connection, 10000) == {
+    assert get_overview_stats(db_connection, 1_000_000) == {
         "load": 0,
         "tables": 1,
         "updates": 2,
