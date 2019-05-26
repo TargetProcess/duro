@@ -21,7 +21,8 @@ def build_graph(tables: List) -> nx.DiGraph:
 
 def save_graph_to_file(graph: nx.DiGraph):
     # pylint: disable=no-member
-    nx.nx_pydot.to_pydot(graph).write_png("dependencies.png")
+    # TODO: fix graphviz dependencies, add params for optional output
+    # nx.nx_pydot.to_pydot(graph).write_png("dependencies.png")
     nx.nx_pydot.write_dot(
         copy_graph_without_attributes(graph, ["contents", "interval"]),
         "dependencies.dot",
