@@ -9,6 +9,7 @@ class GlobalConfig(NamedTuple):
     views_path: str
     logs_path: str
     graph: nx.DiGraph
+    use_git: bool
 
 
 class SlackConfig(NamedTuple):
@@ -27,12 +28,13 @@ def load_global_config(config_file="config.conf") -> GlobalConfig:
         views_path = config["main"].get("views", "./views")
         graph_file_path = config["main"].get("graph", "dependencies.dot")
         logs_path = config["main"].get("logs", "./logs")
+        use_git = config["main"].getboolean("use_git", False)
         try:
             graph = nx.nx_pydot.read_dot(graph_file_path)
         except FileNotFoundError:
             graph = None
         # noinspection PyArgumentList
-        return GlobalConfig(db_path, views_path, logs_path, graph)
+        return GlobalConfig(db_path, views_path, logs_path, graph, use_git)
     except (configparser.NoSectionError, KeyError):
         raise ValueError(
             "No ’main’ section in config.conf (or maybe file doesn’t exist at all)"

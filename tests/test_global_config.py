@@ -9,18 +9,21 @@ def test_load_global_config(full_config, partial_config, empty_config):
     assert full_global_config.db_path == "db.db"
     assert full_global_config.logs_path == "logs_folder"
     assert full_global_config.graph.name == "test-graph"
+    assert full_global_config.use_git is True
 
     empty_global_config = load_global_config(empty_config)
     assert empty_global_config.views_path == "./views"
     assert empty_global_config.db_path == "./duro.db"
     assert empty_global_config.logs_path == "./logs"
     assert empty_global_config.graph.name == "dependencies"
+    assert empty_global_config.use_git is False
 
     partial_global_config = load_global_config(partial_config)
     assert partial_global_config.views_path == "./views"
     assert partial_global_config.db_path == "db.db"
     assert partial_global_config.logs_path == "logs_folder"
     assert partial_global_config.graph.name == "dependencies"
+    assert partial_global_config.use_git is False
 
     with pytest.raises(ValueError):
         load_global_config("non-existent file")

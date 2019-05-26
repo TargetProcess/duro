@@ -78,7 +78,10 @@ if __name__ == "__main__":
     global_config = load_global_config()
     try:
         schedule(
-            global_config.views_path, global_config.db_path, strict=False, use_git=False
+            global_config.views_path,
+            global_config.db_path,
+            strict=False,
+            use_git=global_config.use_git,
         )
     except SchedulerError as e:
         send_slack_notification(str(e), "Scheduler error")
