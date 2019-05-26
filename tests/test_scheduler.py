@@ -54,10 +54,12 @@ def test_build_graph(views_path):
     assert graph.nodes() == [
         "first.cities",
         "first.countries",
+        "first.countries_detailed",
         "second.child",
         "second.parent",
     ]
     assert graph.edges() == [
+        ("first.countries_detailed", "first.countries"),
         ("second.child", "first.cities"),
         ("second.parent", "second.child"),
     ]
@@ -256,7 +258,7 @@ def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
     assert table[3] is None
 
     empty_db_cursor.execute("select count(*) from tables")
-    assert empty_db_cursor.fetchone()[0] == 5
+    assert empty_db_cursor.fetchone()[0] == 6
 
     save_to_db(graph, empty_db_str, views_path, "commit_hash")
     empty_db_cursor.execute("select * from commits")

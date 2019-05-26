@@ -156,26 +156,27 @@ def load_select_query(views_path: str, table: str) -> str:
     return load_query(views_path, table)
 
 
-def find_file_for_table(views_path: str, table: str, match: Callable) -> str:
-    folder, file = table.split(".")
-    files_inside = [
-        file
-        for file in glob.glob(os.path.join(views_path, folder, f"{file}*"))
-        if match(file)
+def generate_possible_table_files(table: str) -> List:
+    schema, table = table.split(".")
+    inside_folder_filenames = [
+        f"{schema}/{table}.sql",
+        f"{schema}/{table} *.sql",
+        f"{schema}/{table}_test.sql",
+        f"{schema}/{table}_select.sql",
+        f"{schema}/{table}.py",
     ]
+    outside_folder_filenames = [f.replace('/', '.', 1) for f in inside_folder_filenames]
+    return inside_folder_filenames + outside_folder_filenames
 
-    if files_inside and os.path.isfile(files_inside[0]):
-        return files_inside[0]
 
-    else:
-        files_outside = [
-            file
-            for file in glob.glob(os.path.join(views_path, table, "*"))
-            if match(file)
-        ]
-        if files_outside and os.path.isfile(files_outside[0]):
-            return files_outside[0]
+def find_file_for_table(views_path: str, table: str, match: Callable) -> str:
+    possible_filenames = generate_possible_table_files(table)
+    existing_files = [glob.glob(os.path.join(views_path, f)) for f in possible_filenames]
+    matching_files = [f for f in chain.from_iterable(existing_files)
+                      if match(f)]
 
+    if matching_files:
+        return matching_files[0]
     return ""
 
 

@@ -19,8 +19,7 @@ from utils.file_utils import (
     is_processor_select_query,
     has_processor,
     list_files,
-    load_select_query,
-)
+    load_select_query)
 
 
 def filenames(views_path):
@@ -75,7 +74,7 @@ def test_load_table_from_file(views_path):
 
 def test_list_view_files(views_path):
     views = load_tables_in_path(views_path)
-    assert len(views) == 4
+    assert len(views) == 5
 
     s_child = [v for v in views if v[0] == "second.child"][0]
     assert s_child[1]["contents"] == "select city, country from first.cities"
@@ -135,13 +134,19 @@ def test_is_test():
     assert is_test(None) is False
     assert is_test("table_tst.sql") is False
     assert is_test("table_test.sql") is True
+    # assert is_test("table_tst.sql", "table") is False
+    assert is_test("table_test.sql") is True
+    # assert is_test("table_test.sql", "table") is True
+    # assert is_test("table_test.sql", "not_table") is True
 
 
 def test_is_processor():
     assert is_processor("") is False
-    assert is_test(None) is False
+    assert is_processor(None) is False
     assert is_processor("table.py") is True
     assert is_processor("table.sql") is False
+    # assert is_processor("table.py", "table") is True
+    # assert is_processor("table.py", "not_table") is False
 
 
 def test_is_sql_query():
@@ -149,6 +154,8 @@ def test_is_sql_query():
     assert is_sql_query(None) is False
     assert is_sql_query("table.py") is False
     assert is_sql_query("table.sql") is True
+    # assert is_sql_query("table.sql", "not_table") is False
+    # assert is_sql_query("table.sql", "table") is True
 
 
 def test_load_ddl_query(views_path):
@@ -198,19 +205,20 @@ def test_load_select_query(views_path):
 
 def test_list_files(views_path):
     sql_files = list_files(views_path, mask="*.sql")
-    assert len(sql_files) == 7
+    assert len(sql_files) == 9
     assert sql_files[1] == "./views/first/cities_test.sql"
 
     all_files = list_files(views_path, mask="*")
-    assert len(all_files) == 14
+    assert len(all_files) == 16
 
     no_files = list_files(views_path, match=lambda x: False)
     assert no_files == []
 
     test_files = list_files(views_path, match=is_test)
-    assert test_files == [
+    assert sorted(test_files) == [
         "./views/first.countries_test.sql",
         "./views/first/cities_test.sql",
+        "./views/first/countries_detailed_test.sql",
     ]
 
     python_processors = list_files(views_path, match=is_processor, mask="*.py")
@@ -222,4 +230,7 @@ def test_list_files(views_path):
 
 def test_list_tests(views_path):
     tests = list_tests(views_path)
-    assert tests == ["first.countries_test", "first.cities_test"]
+    assert sorted(tests) == ["first.cities_test",
+                             "first.countries_detailed_test",
+                             "first.countries_test"
+                             ]
