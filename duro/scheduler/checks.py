@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Iterable
 
-from utils.file_utils import (
+from duro.utils.file_utils import (
     load_query,
     list_processors,
     load_select_query,

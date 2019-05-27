@@ -1,6 +1,6 @@
 from typing import Dict
 
-from utils.utils import DistSortKeys, Table, temp_postfix
+from duro.utils.utils import DistSortKeys, Table, temp_postfix
 
 
 def load_dist_sort_keys(config: Dict) -> DistSortKeys:

@@ -2,7 +2,7 @@ import os
 from functools import reduce
 from typing import Dict, List, Set
 
-from utils.file_utils import read_config
+from duro.utils.file_utils import read_config
 
 
 def parse_table_config(full_table_name: str, views_path: str) -> Dict:

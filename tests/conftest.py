@@ -9,7 +9,7 @@ import logzero
 import pytest
 from git import Repo
 
-from utils.utils import Table
+from duro.utils.utils import Table
 
 DB_PATH = "./test.db"
 PREPARED_DB_PATH = "./test_data.db"

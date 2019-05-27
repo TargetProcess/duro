@@ -1,7 +1,7 @@
 import arrow
 
-from scheduler.graph import build_graph
-from server.sqlite import (
+from duro.scheduler.graph import build_graph
+from duro.server.sqlite import (
     get_all_tables,
     get_jobs,
     get_table_details,
@@ -9,7 +9,7 @@ from server.sqlite import (
     propagate_force_flag,
     get_overview_stats,
 )
-from utils.file_utils import load_tables_in_path
+from duro.utils.file_utils import load_tables_in_path
 
 
 def test_get_all_tables(db_cursor):

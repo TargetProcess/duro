@@ -1,6 +1,6 @@
 import pytest
 
-from utils.global_config import load_global_config, load_slack_config
+from duro.utils.global_config import load_global_config, load_slack_config
 
 
 def test_load_global_config(full_config, partial_config, empty_config):

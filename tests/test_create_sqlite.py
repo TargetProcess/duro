@@ -1,7 +1,7 @@
 import pytest
 import arrow
 
-from create.sqlite import (
+from duro.create.sqlite import (
     load_table_details,
     update_last_created,
     log_start,
@@ -17,9 +17,9 @@ from create.sqlite import (
     build_query_to_create_timestamps_table,
     get_tables_to_create,
 )
-from create.timestamps import Timestamps
-from errors import TableNotFoundInDBError
-from server.sqlite import set_table_for_update, get_table_details
+from duro.create.timestamps import Timestamps
+from duro.errors import TableNotFoundInDBError
+from duro.server.sqlite import set_table_for_update, get_table_details
 
 
 def test_load_info(db_str):

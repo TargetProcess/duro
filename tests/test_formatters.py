@@ -1,6 +1,6 @@
 import arrow
 
-from server.formatters import (
+from duro.server.formatters import (
     print_log,
     format_as_human_date,
     format_as_date,

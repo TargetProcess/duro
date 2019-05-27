@@ -2,14 +2,14 @@ from time import sleep
 
 import pytest
 
-from errors import GitError
-from scheduler.commits import (
+from duro.errors import GitError
+from duro.scheduler.commits import (
     get_all_commits,
     get_previous_commit,
     get_latest_new_commit,
 )
-from scheduler.graph import build_graph
-from scheduler.sqlite import (
+from duro.scheduler.graph import build_graph
+from duro.scheduler.sqlite import (
     save_commit,
     build_table_configs,
     is_already_in_db,
@@ -19,9 +19,9 @@ from scheduler.sqlite import (
     should_be_updated,
     save_to_db,
 )
-from scheduler.table_config import parse_permissions, parse_table_config
-from utils.file_utils import load_tables_in_path
-from utils.utils import Table
+from duro.scheduler.table_config import parse_permissions, parse_table_config
+from duro.utils.file_utils import load_tables_in_path
+from duro.utils.utils import Table
 
 
 def test_get_all_commits(empty_git, non_empty_git):

@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from git import Repo, InvalidGitRepositoryError
 
-from errors import GitError
+from duro.errors import GitError
 
 
 def get_all_commits(folder: str) -> List[str]:

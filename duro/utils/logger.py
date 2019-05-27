@@ -6,7 +6,7 @@ from typing import Callable
 
 import logzero
 
-from utils.global_config import load_global_config
+from duro.utils.global_config import load_global_config
 
 
 def setup_logger(name: str = "duro", stdout: bool = False) -> Logger:

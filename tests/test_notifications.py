@@ -1,11 +1,11 @@
 from time import sleep
 
-from notifications.slack import (
+from duro.notifications.slack import (
     choose_channel_and_emoji,
     build_message,
     delay_duplicates,
 )
-from utils.global_config import load_slack_config
+from duro.utils.global_config import load_slack_config
 
 
 def test_choose_channel_and_emoji(full_config):

@@ -1,6 +1,6 @@
 import pytest
 
-from create.data_tests import parse_tests_results, load_tests
+from duro.create.data_tests import parse_tests_results, load_tests
 
 
 def test_parse_tests_results():

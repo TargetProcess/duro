@@ -1,18 +1,18 @@
-from create.data_tests import load_tests, run_tests
-from create.process import process_and_upload_data
-from create.redshift import (
+from duro.create.data_tests import load_tests, run_tests
+from duro.create.process import process_and_upload_data
+from duro.create.redshift import (
     drop_old_table,
     drop_temp_table,
     replace_old_table,
     create_temp_table,
     create_connection,
 )
-from create.sqlite import update_last_created, log_timestamps, log_start
-from create.timestamps import Timestamps
-from errors import TestsFailedError
-from utils.file_utils import load_processor
-from utils.logger import setup_logger
-from utils.utils import Table
+from duro.create.sqlite import update_last_created, log_timestamps, log_start
+from duro.create.timestamps import Timestamps
+from duro.errors import TestsFailedError
+from duro.utils.file_utils import load_processor
+from duro.utils.logger import setup_logger
+from duro.utils.utils import Table
 
 
 # pylint: disable=no-member

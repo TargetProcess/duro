@@ -3,7 +3,7 @@ import time
 import arrow
 import pytest
 
-from create.timestamps import Timestamps
+from duro.create.timestamps import Timestamps
 
 
 # noinspection PyUnresolvedReferences

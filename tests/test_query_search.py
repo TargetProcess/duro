@@ -1,6 +1,6 @@
 import pytest
 
-from scheduler.query import is_table_used_in_query, remove_comments
+from duro.scheduler.query import is_table_used_in_query, remove_comments
 
 
 def test_remove_comments():

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from create.redshift import (
+from duro.create.redshift import (
     create_temp_table,
     drop_table,
     drop_old_table,

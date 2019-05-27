@@ -7,8 +7,8 @@ from urllib.error import HTTPError
 
 import slackweb
 
-from utils.global_config import load_slack_config, SlackConfig
-from utils.logger import setup_logger
+from duro.utils.global_config import load_slack_config, SlackConfig
+from duro.utils.logger import setup_logger
 
 
 # pylint: disable=inconsistent-return-statements

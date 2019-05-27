@@ -1,7 +1,7 @@
 import pytest
 
-from create.sqlite import load_table_details
-from create.table_config import (
+from duro.create.sqlite import load_table_details
+from duro.create.table_config import (
     load_dist_sort_keys,
     add_dist_sort_keys,
     load_grant_select_statements,

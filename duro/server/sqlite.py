@@ -3,8 +3,8 @@ from typing import Dict, Tuple
 
 from networkx import DiGraph
 
-from utils.global_config import load_global_config
-from utils.graph_utils import get_all_successors
+from duro.utils.global_config import load_global_config
+from duro.utils.graph_utils import get_all_successors
 
 
 def get_all_tables(db):

@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from utils.file_utils import (
+from duro.utils.file_utils import (
     parse_filename,
     convert_interval_to_integer,
     is_processor_ddl,

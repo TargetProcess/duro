@@ -1,6 +1,6 @@
 import pytest
 
-from scheduler.checks import find_tables_with_missing_files
+from duro.scheduler.checks import find_tables_with_missing_files
 
 
 def test_find_tables_with_missing_files(views_path_with_missing_files):

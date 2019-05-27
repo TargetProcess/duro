@@ -1,6 +1,6 @@
 import networkx as nx
 
-from utils.graph_utils import (
+from duro.utils.graph_utils import (
     find_sources,
     find_sources_without_attribute,
     copy_graph_without_attributes,
