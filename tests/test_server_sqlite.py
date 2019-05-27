@@ -1,6 +1,6 @@
 import arrow
 
-from graph import build_graph
+from scheduler.graph import build_graph
 from server.sqlite import (
     get_all_tables,
     get_jobs,

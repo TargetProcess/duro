@@ -12,3 +12,4 @@ views
 *.yml
 duro.db
 venv
+dependencies.dot

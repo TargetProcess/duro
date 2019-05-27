@@ -1,7 +1,7 @@
 import arrow
 
 from create.sqlite import mark_table_as_waiting, mark_table_as_not_waiting, log_start
-from tree import should_be_created
+from create.tree import should_be_created
 
 
 def test_should_be_created(db_str, db_cursor, table):
