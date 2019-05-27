@@ -4,7 +4,7 @@ from typing import List
 import arrow
 import networkx as nx
 
-from duro.create.sqlite import (
+from create.sqlite import (
     load_table_details,
     is_running,
     reset_start,
@@ -14,12 +14,12 @@ from duro.create.sqlite import (
     mark_table_as_not_waiting,
     mark_table_as_waiting,
 )
-from duro.create.table import create_table
-from duro.errors import MaterializationError, TableNotFoundInGraphError
-from duro.notifications.slack import send_slack_notification
-from duro.utils.global_config import GlobalConfig
-from duro.utils.logger import setup_logger
-from duro.utils.utils import Table
+from create.table import create_table
+from errors import MaterializationError, TableNotFoundInGraphError
+from notifications.slack import send_slack_notification
+from utils.global_config import GlobalConfig
+from utils.logger import setup_logger
+from utils.utils import Table
 
 logger = setup_logger()
 

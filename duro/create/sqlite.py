@@ -4,9 +4,9 @@ from typing import List, Tuple
 
 import arrow
 
-from duro.create.timestamps import Timestamps
-from duro.errors import TableNotFoundInDBError
-from duro.utils.utils import Table
+from create.timestamps import Timestamps
+from errors import TableNotFoundInDBError
+from utils.utils import Table
 
 
 def load_table_details(db_str: str, table: str) -> Table:

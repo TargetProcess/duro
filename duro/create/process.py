@@ -8,13 +8,13 @@ import arrow
 import psycopg2
 import boto3
 
-from duro.create.table_config import load_dist_sort_keys, load_grant_select_statements
-from duro.create.timestamps import Timestamps
-from duro.credentials import s3_credentials
-from duro.errors import ProcessorNotFoundError, RedshiftCopyError
-from duro.utils.file_utils import load_ddl_query
-from duro.utils.logger import log_action
-from duro.utils.utils import Table, temp_postfix
+from create.table_config import load_dist_sort_keys, load_grant_select_statements
+from create.timestamps import Timestamps
+from credentials import s3_credentials
+from errors import ProcessorNotFoundError, RedshiftCopyError
+from utils.file_utils import load_ddl_query
+from utils.logger import log_action
+from utils.utils import Table, temp_postfix
 
 
 def process_and_upload_data(

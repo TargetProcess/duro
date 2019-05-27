@@ -3,9 +3,9 @@ from typing import List
 
 import networkx as nx
 
-from duro.errors import NotADAGError
-from duro.scheduler.query import is_table_used_in_query
-from duro.utils.graph_utils import copy_graph_without_attributes, detect_cycles
+from errors import NotADAGError
+from scheduler.query import is_table_used_in_query
+from utils.graph_utils import copy_graph_without_attributes, detect_cycles
 
 
 def build_graph(tables: List) -> nx.DiGraph:

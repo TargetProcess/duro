@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple
 
 import arrow
 
-from duro.create.timestamps import events
+from create.timestamps import events
 
 
 def print_log(log: Dict) -> List:
