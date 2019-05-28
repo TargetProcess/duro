@@ -9,7 +9,7 @@ from duro.create.redshift import (
 )
 from duro.create.sqlite import update_last_created, log_timestamps, log_start
 from duro.create.timestamps import Timestamps
-from duro.errors import TestsFailedError
+from utils.errors import TestsFailedError
 from duro.utils.file_utils import load_processor
 from duro.utils.logger import setup_logger
 from duro.utils.utils import Table

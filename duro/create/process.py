@@ -11,7 +11,7 @@ import boto3
 from create.table_config import load_dist_sort_keys, load_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
-from errors import ProcessorNotFoundError, RedshiftCopyError
+from utils.errors import ProcessorNotFoundError, RedshiftCopyError
 from utils.file_utils import load_ddl_query
 from utils.logger import log_action
 from utils.utils import Table, temp_postfix

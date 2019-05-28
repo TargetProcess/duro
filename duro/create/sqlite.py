@@ -5,7 +5,7 @@ from typing import List, Tuple
 import arrow
 
 from create.timestamps import Timestamps
-from errors import TableNotFoundInDBError
+from utils.errors import TableNotFoundInDBError
 from utils.utils import Table
 
 

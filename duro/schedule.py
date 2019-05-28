@@ -2,7 +2,7 @@ from typing import List
 
 import networkx as nx
 
-from errors import RootsWithoutIntervalError, SchedulerError, TablesWithoutRequiredFiles
+from utils.errors import RootsWithoutIntervalError, SchedulerError, TablesWithoutRequiredFiles
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
 from scheduler.graph import build_graph, save_graph_to_file, check_for_cycles

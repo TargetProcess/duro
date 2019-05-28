@@ -2,7 +2,7 @@ from time import sleep
 
 import pytest
 
-from duro.errors import GitError
+from utils.errors import GitError
 from duro.scheduler.commits import (
     get_all_commits,
     get_previous_commit,

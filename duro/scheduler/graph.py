@@ -3,7 +3,7 @@ from typing import List
 
 import networkx as nx
 
-from errors import NotADAGError
+from utils.errors import NotADAGError
 from scheduler.query import is_table_used_in_query
 from utils.graph_utils import copy_graph_without_attributes, detect_cycles
 

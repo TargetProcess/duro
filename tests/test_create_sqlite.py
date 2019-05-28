@@ -18,7 +18,7 @@ from duro.create.sqlite import (
     get_tables_to_create,
 )
 from duro.create.timestamps import Timestamps
-from duro.errors import TableNotFoundInDBError
+from utils.errors import TableNotFoundInDBError
 from duro.server.sqlite import set_table_for_update, get_table_details
 
 

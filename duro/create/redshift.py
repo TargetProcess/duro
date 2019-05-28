@@ -3,7 +3,7 @@ import psycopg2
 
 from duro.create.table_config import add_dist_sort_keys, load_grant_select_statements
 from duro.credentials import redshift_credentials
-from duro.errors import TableCreationError, RedshiftConnectionError
+from utils.errors import TableCreationError, RedshiftConnectionError
 from duro.utils.logger import log_action
 from duro.utils.utils import Table, temp_postfix
 

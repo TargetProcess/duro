@@ -15,7 +15,7 @@ from create.sqlite import (
     mark_table_as_waiting,
 )
 from create.table import create_table
-from errors import MaterializationError, TableNotFoundInGraphError
+from utils.errors import MaterializationError, TableNotFoundInGraphError
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
 from utils.logger import setup_logger

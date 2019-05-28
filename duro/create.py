@@ -3,7 +3,7 @@ from datetime import datetime
 
 from create.sqlite import get_tables_to_create, reset_all_starts
 from create.tree import create_tree
-from errors import CreationError
+from utils.errors import CreationError
 from notifications.slack import send_slack_notification
 from utils.global_config import load_global_config
 
