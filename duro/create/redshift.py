@@ -1,7 +1,6 @@
 import arrow
 import psycopg2
 
-from duro.create.table_config import add_dist_sort_keys, load_grant_select_statements
 from duro.credentials import redshift_credentials
 from utils.errors import TableCreationError, RedshiftConnectionError
 from duro.utils.logger import log_action
@@ -20,8 +19,8 @@ def create_connection():
 
 @log_action("create temporary table")
 def create_temp_table(table: Table, connection) -> int:
-    create_query = add_dist_sort_keys(table)
-    grant_select = load_grant_select_statements(table.name, table.config)
+    create_query = table.get_query_with_dist_sort_keys()
+    grant_select = table.load_grant_select_statements()
     full_query = f"""
         DROP TABLE IF EXISTS {table.name}{temp_postfix};
         {create_query}

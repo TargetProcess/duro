@@ -8,7 +8,6 @@ import arrow
 import psycopg2
 import boto3
 
-from create.table_config import load_dist_sort_keys, load_grant_select_statements
 from create.timestamps import Timestamps
 from credentials import s3_credentials
 from utils.errors import ProcessorNotFoundError, RedshiftCopyError
@@ -39,7 +38,7 @@ def process_and_upload_data(
     ts.log("s3")
 
     drop_and_create_query = build_drop_and_create_query(
-        table.name, table.config, views_path
+        table, views_path
     )
     timestamp = copy_to_redshift(
         filename, table.name, connection, drop_and_create_query
@@ -98,9 +97,9 @@ def upload_to_s3(filename: str):
 
 
 @log_action("build query to drop old table and create a new one")
-def build_drop_and_create_query(table: str, config: Dict, views_path: str):
-    keys = load_dist_sort_keys(config)
-    create_query = load_ddl_query(views_path, table).rstrip(";\n")
+def build_drop_and_create_query(table: Table, views_path: str):
+    keys = table.load_dist_sort_keys()
+    create_query = load_ddl_query(views_path, table.name).rstrip(";\n")
     if "diststyle" not in create_query:
         create_query += f"{keys.diststyle}\n"
     if "distkey" not in create_query:
@@ -108,7 +107,7 @@ def build_drop_and_create_query(table: str, config: Dict, views_path: str):
     if "sortkey" not in create_query:
         create_query += f"{keys.sortkey}\n"
 
-    grant_select = load_grant_select_statements(table, config)
+    grant_select = table.load_grant_select_statements()
     return f"DROP TABLE IF EXISTS {table}{temp_postfix}; {create_query}; {grant_select}"
 
 

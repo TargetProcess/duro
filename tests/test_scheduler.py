@@ -82,7 +82,10 @@ def test_build_table_configs(views_path):
     second_child = [t for t in configs if t.name == "second.child"][0]
     assert second_child.query == "select city, country from first.cities"
     assert second_child.interval is None
-    assert second_child.config == {"distkey": "city", "diststyle": "all"}
+    assert second_child.config == {"distkey": "city",
+                                   "diststyle": "all",
+                                   "snapshots_interval": "24h",
+                                   "snapshots_stored_for": "90d"}
 
 
 def test_parse_permissions():

@@ -2,9 +2,6 @@ import pytest
 
 from duro.create.sqlite import load_table_details
 from duro.utils.table import Table
-from duro.create.table_config import (
-    load_grant_select_statements,
-)
 
 
 def test_load_dist_sort_keys(db_str):
