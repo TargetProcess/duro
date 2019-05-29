@@ -46,7 +46,6 @@ def test_get_query_with_dist_sort_keys(db_str):
     )
 
 
-# noinspection PyUnresolvedReferences
 def test_load_grant_select_statements(db_str):
     child = load_table_details(db_str, "second.child")
     grant = child.load_grant_select_statements()
@@ -59,3 +58,11 @@ def test_load_grant_select_statements(db_str):
     countries = load_table_details(db_str, "first.countries")
     grant = countries.load_grant_select_statements()
     assert grant == "GRANT SELECT ON first.countries_duro_temp TO joan, john"
+
+
+def test_has_snapshots(db_str):
+    child = load_table_details(db_str, "second.child")
+    assert child.store_snapshots is True
+
+    parent = load_table_details(db_str, "second.parent")
+    assert parent.store_snapshots is False

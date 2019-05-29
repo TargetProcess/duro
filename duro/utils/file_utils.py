@@ -3,9 +3,10 @@ import glob
 import os
 from functools import lru_cache
 from itertools import chain
-from typing import List, Tuple, Dict, Optional, Callable
+from typing import List, Tuple, Dict, Callable
 
 from utils.table import temp_postfix
+from utils.utils import convert_interval_to_integer
 
 select_postfix = "_select"
 test_postfix = "_test"
@@ -165,15 +166,16 @@ def generate_possible_table_files(table: str) -> List:
         f"{schema}/{table}_select.sql",
         f"{schema}/{table}.py",
     ]
-    outside_folder_filenames = [f.replace('/', '.', 1) for f in inside_folder_filenames]
+    outside_folder_filenames = [f.replace("/", ".", 1) for f in inside_folder_filenames]
     return inside_folder_filenames + outside_folder_filenames
 
 
 def find_file_for_table(views_path: str, table: str, match: Callable) -> str:
     possible_filenames = generate_possible_table_files(table)
-    existing_files = [glob.glob(os.path.join(views_path, f)) for f in possible_filenames]
-    matching_files = [f for f in chain.from_iterable(existing_files)
-                      if match(f)]
+    existing_files = [
+        glob.glob(os.path.join(views_path, f)) for f in possible_filenames
+    ]
+    matching_files = [f for f in chain.from_iterable(existing_files) if match(f)]
 
     if matching_files:
         return matching_files[0]
@@ -198,18 +200,3 @@ def read_config(filename: str) -> Dict:
         return dict(config.items("top"))
     except FileNotFoundError:
         return {}
-
-
-def convert_interval_to_integer(interval: Optional[str]) -> Optional[int]:
-    if interval is None:
-        return None
-    units = {"m": 1, "h": 60, "d": 1440, "w": 10080}
-    unit = interval[-1].lower()
-    if unit not in units.keys():
-        raise ValueError("Invalid interval")
-
-    try:
-        value = int(interval[:-1])
-        return value * units[unit]
-    except ValueError:
-        raise ValueError("Invalid interval")

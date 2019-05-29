@@ -5,7 +5,8 @@ import sqlite3
 from pathlib import Path
 from shutil import copyfile
 import sys
-sys.path.append('../duro')
+
+sys.path.append("../duro")
 
 import logzero
 import pytest

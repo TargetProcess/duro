@@ -1,6 +1,8 @@
 import json
 from typing import NamedTuple, Dict, Optional
 
+from utils.utils import convert_interval_to_integer
+
 temp_postfix = "_duro_temp"
 
 
@@ -24,11 +26,19 @@ class Table:
         self.name = name
         self.query = query
         self.interval = interval
-        self.config = config
+        self.config = config if config else {}
         self.config_json = json.dumps(config) if config else None
         self.last_created = last_created
         self.force = force
         self.waiting = waiting
+
+        self._snapshots_interval = convert_interval_to_integer(
+            self.config.get("snapshots_interval")
+        )
+
+        self._snapshots_stored_for = convert_interval_to_integer(
+            self.config.get("snapshots_stored_for")
+        )
 
     def __repr__(self):
         return f"Table({self.name}, {self.query}, {self.interval}, {self.config}, {self.last_created}, {self.force}, {self.waiting})"
@@ -40,12 +50,17 @@ class Table:
         if not self.config:
             return DistSortKeys("", "", "")
 
-        distkey = f'distkey("{self.config["distkey"]}")' if self.config.get(
-            "distkey") else ""
-        diststyle = f'diststyle {self.config["diststyle"]}' if self.config.get(
-            "diststyle") else ""
-        sortkey = f'sortkey("{self.config["sortkey"]}")' if self.config.get(
-            "sortkey") else ""
+        distkey = (
+            f'distkey("{self.config["distkey"]}")' if self.config.get("distkey") else ""
+        )
+        diststyle = (
+            f'diststyle {self.config["diststyle"]}'
+            if self.config.get("diststyle")
+            else ""
+        )
+        sortkey = (
+            f'sortkey("{self.config["sortkey"]}")' if self.config.get("sortkey") else ""
+        )
 
         # noinspection PyArgumentList
         return DistSortKeys(distkey, diststyle, sortkey)
@@ -69,3 +84,7 @@ class Table:
                 'grant_select']}"""
 
         return ""
+
+    @property
+    def store_snapshots(self) -> bool:
+        return bool(self._snapshots_interval)
