@@ -1,36 +1,36 @@
 import pytest
 
 from duro.create.sqlite import load_table_details
+from duro.utils.table import Table
 from duro.create.table_config import (
-    load_dist_sort_keys,
-    add_dist_sort_keys,
     load_grant_select_statements,
 )
 
 
 def test_load_dist_sort_keys(db_str):
     child = load_table_details(db_str, "second.child")
-    keys = load_dist_sort_keys(child.config)
+    keys = child.load_dist_sort_keys()
     assert keys.distkey == 'distkey("city")'
     assert keys.diststyle == "diststyle all"
     assert keys.sortkey == ""
 
     parent = load_table_details(db_str, "second.parent")
-    keys = load_dist_sort_keys(parent.config)
+    keys = parent.load_dist_sort_keys()
     assert keys.distkey == ""
     assert keys.diststyle == "diststyle even"
     assert keys.sortkey == ""
 
-    empty = load_dist_sort_keys({})
-    assert empty.distkey == ""
-    assert empty.diststyle == ""
-    assert empty.sortkey == ""
+    empty_table = Table('empty', '', None)
+    empty_config = empty_table.load_dist_sort_keys()
+    assert empty_config.distkey == ""
+    assert empty_config.diststyle == ""
+    assert empty_config.sortkey == ""
 
 
 # noinspection PyUnresolvedReferences
-def test_add_dist_sort_keys(db_str):
+def test_get_query_with_dist_sort_keys(db_str):
     child = load_table_details(db_str, "second.child")
-    query = add_dist_sort_keys(child)
+    query = child.get_query_with_dist_sort_keys()
     assert pytest.similar(
         query,
         """
@@ -39,8 +39,8 @@ def test_add_dist_sort_keys(db_str):
         AS (select city, country from first.cities);""",
     )
 
-    child = load_table_details(db_str, "second.parent")
-    query = add_dist_sort_keys(child)
+    parent = load_table_details(db_str, "second.parent")
+    query = parent.get_query_with_dist_sort_keys()
     assert pytest.similar(
         query,
         """
@@ -52,13 +52,13 @@ def test_add_dist_sort_keys(db_str):
 # noinspection PyUnresolvedReferences
 def test_load_grant_select_statements(db_str):
     child = load_table_details(db_str, "second.child")
-    grant = load_grant_select_statements(child.name, child.config)
+    grant = child.load_grant_select_statements()
     assert grant == ""
 
     cities = load_table_details(db_str, "first.cities")
-    grant = load_grant_select_statements(cities.name, cities.config)
+    grant = cities.load_grant_select_statements()
     assert grant == "GRANT SELECT ON first.cities_duro_temp TO jane, john"
 
     countries = load_table_details(db_str, "first.countries")
-    grant = load_grant_select_statements(countries.name, countries.config)
+    grant = countries.load_grant_select_statements()
     assert grant == "GRANT SELECT ON first.countries_duro_temp TO joan, john"

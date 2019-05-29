@@ -5,7 +5,7 @@ from duro.create.table_config import add_dist_sort_keys, load_grant_select_state
 from duro.credentials import redshift_credentials
 from utils.errors import TableCreationError, RedshiftConnectionError
 from duro.utils.logger import log_action
-from duro.utils.utils import Table, temp_postfix
+from duro.utils.table import Table, temp_postfix
 
 
 @log_action("create Redshift connection")

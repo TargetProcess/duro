@@ -21,7 +21,7 @@ from duro.scheduler.sqlite import (
 )
 from duro.scheduler.table_config import parse_permissions, parse_table_config
 from duro.utils.file_utils import load_tables_in_path
-from duro.utils.utils import Table
+from duro.utils.table import Table
 
 
 def test_get_all_commits(empty_git, non_empty_git):

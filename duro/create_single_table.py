@@ -13,7 +13,7 @@ from create.timestamps import Timestamps
 from scheduler.table_config import parse_table_config
 from utils.file_utils import load_processor, load_select_query
 from utils.logger import setup_logger
-from utils.utils import Table
+from utils.table import Table
 
 
 def create_table(table: Table, views_path: str, verbose=False):

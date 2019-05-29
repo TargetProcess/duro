@@ -1,6 +1,6 @@
 from typing import Dict
 
-from utils.utils import DistSortKeys, Table, temp_postfix
+from utils.table import DistSortKeys, Table, temp_postfix
 
 
 def load_dist_sort_keys(config: Dict) -> DistSortKeys:
@@ -34,3 +34,7 @@ def load_grant_select_statements(table: str, config: Dict) -> str:
         return f"""GRANT SELECT ON {table}{temp_postfix} TO {config['grant_select']}"""
 
     return ""
+
+
+def has_snapshots(table: Table) -> bool:
+    return bool(table.config.get("snapshots_interval"))

@@ -6,7 +6,7 @@ import arrow
 
 from create.timestamps import Timestamps
 from utils.errors import TableNotFoundInDBError
-from utils.utils import Table
+from utils.table import Table
 
 
 def load_table_details(db_str: str, table: str) -> Table:

@@ -5,7 +5,7 @@ import arrow
 import networkx as nx
 
 from scheduler.table_config import parse_table_config
-from utils.utils import Table
+from utils.table import Table
 
 
 def save_to_db(

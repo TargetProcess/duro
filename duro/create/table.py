@@ -12,7 +12,7 @@ from duro.create.timestamps import Timestamps
 from utils.errors import TestsFailedError
 from duro.utils.file_utils import load_processor
 from duro.utils.logger import setup_logger
-from duro.utils.utils import Table
+from duro.utils.table import Table
 
 
 # pylint: disable=no-member
@@ -47,6 +47,10 @@ def create_table(table: Table, db_path: str, views_path: str, remaining_tables: 
 
     replace_old_table(table.name, connection)
     ts.log("replace_old")
+
+    if table.config["snapshot_inverval"]:
+        save_snapshot()
+        remove_old_snapshots()
     drop_old_table(table.name, connection)
     ts.log("drop_old")
     connection.close()

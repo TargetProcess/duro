@@ -14,7 +14,7 @@ from credentials import s3_credentials
 from utils.errors import ProcessorNotFoundError, RedshiftCopyError
 from utils.file_utils import load_ddl_query
 from utils.logger import log_action
-from utils.utils import Table, temp_postfix
+from utils.table import Table, temp_postfix
 
 
 def process_and_upload_data(

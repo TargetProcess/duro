@@ -19,7 +19,7 @@ from utils.errors import MaterializationError, TableNotFoundInGraphError
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
 from utils.logger import setup_logger
-from utils.utils import Table
+from utils.table import Table
 
 logger = setup_logger()
 

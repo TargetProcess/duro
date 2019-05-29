@@ -5,7 +5,7 @@ from functools import lru_cache
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Callable
 
-from utils.utils import temp_postfix
+from utils.table import temp_postfix
 
 select_postfix = "_select"
 test_postfix = "_test"
