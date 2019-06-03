@@ -86,3 +86,11 @@ class RedshiftConnectionError(CreationError):
 
     def __init__(self):
         super().__init__("Couldn’t connect to Redshift", "Couldn’t connect to Redshift")
+
+
+class HistoryTableCreationError(CreationError):
+    """Couldn’t create a table in Redshift"""
+
+    def __init__(self, table, details=None):
+        message = f"""*Creation query failed for snapshots table for `{table}`* ```{details}```"""
+        super().__init__(table, message)

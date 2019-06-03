@@ -6,6 +6,7 @@ from duro.create.redshift import (
     replace_old_table,
     create_temp_table,
     create_connection,
+    make_snapshot,
 )
 from duro.create.sqlite import update_last_created, log_timestamps, log_start
 from duro.create.timestamps import Timestamps
@@ -48,11 +49,13 @@ def create_table(table: Table, db_path: str, views_path: str, remaining_tables: 
     replace_old_table(table.name, connection)
     ts.log("replace_old")
 
-    if table.config["snapshot_inverval"]:
-        save_snapshot()
-        remove_old_snapshots()
     drop_old_table(table.name, connection)
     ts.log("drop_old")
+
+    if table.store_snapshots:
+        make_snapshot(table, connection)
+        ts.log("make_snapshot")
+
     connection.close()
 
     update_last_created(db_path, table.name, creation_timestamp, ts.duration)

@@ -23,6 +23,7 @@ def test_timestamps():
         "tests",
         "replace_old",
         "drop_old",
+        "make_snapshot",
         "finish",
     ]
     assert ts.__slots__ == events

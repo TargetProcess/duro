@@ -13,15 +13,22 @@ import pytest
 from git import Repo
 
 from duro.utils.table import Table
+from tests.create_test_db import ddl, inserts
 
-DB_PATH = "./test.db"
+EMPTY_DB_PATH = "./empty.db"
 PREPARED_DB_PATH = "./test_data.db"
 VIEWS_PATH = "./views"
 
 
-def copy_db(source, target="./copy.db") -> str:
-    copyfile(source, target)
-    return target
+def create_test_db(db_name) -> str:
+    # db = './new_test_data.db'
+    if os.path.exists(db_name):
+        return db_name
+    connection = sqlite3.connect(db_name, isolation_level=None)
+    connection.executescript(ddl)
+    connection.executescript(inserts)
+    connection.commit()
+    return db_name
 
 
 @pytest.fixture
@@ -61,27 +68,27 @@ def logger():
 
 @pytest.fixture
 def empty_db_str() -> str:
-    yield DB_PATH
+    yield EMPTY_DB_PATH
     try:
-        os.remove(DB_PATH)
+        os.remove(EMPTY_DB_PATH)
     except FileNotFoundError:
         pass
 
 
 @pytest.fixture
 def empty_db_cursor():
-    connection = sqlite3.connect(DB_PATH, isolation_level=None)
+    connection = sqlite3.connect(EMPTY_DB_PATH, isolation_level=None)
     yield connection.cursor()
     connection.close()
     try:
-        os.remove(DB_PATH)
+        os.remove(EMPTY_DB_PATH)
     except FileNotFoundError:
         pass
 
 
 @pytest.fixture
 def db_str() -> str:
-    db = copy_db(PREPARED_DB_PATH)
+    db = create_test_db(PREPARED_DB_PATH)
     yield db
     try:
         os.remove(db)
@@ -91,7 +98,7 @@ def db_str() -> str:
 
 @pytest.fixture
 def db_connection():
-    db = copy_db(PREPARED_DB_PATH)
+    db = create_test_db(PREPARED_DB_PATH)
     connection = sqlite3.connect(db, isolation_level=None)
     connection.row_factory = sqlite3.Row
     yield connection
@@ -103,7 +110,7 @@ def db_connection():
 
 @pytest.fixture
 def db_cursor():
-    db = copy_db(PREPARED_DB_PATH)
+    db = create_test_db(PREPARED_DB_PATH)
     connection = sqlite3.connect(db, isolation_level=None)
     connection.row_factory = sqlite3.Row
     yield connection.cursor()
@@ -177,7 +184,6 @@ def similar_query(first_query: str, second_query: str, *args) -> bool:
         return True
 
     single_lines = [re.sub("[ \t\n]", "", query) for query in queries]
-
     return all(query == single_lines[0] for query in single_lines[1:])
 
 

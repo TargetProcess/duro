@@ -258,7 +258,8 @@ def test_build_query_to_create_timestamps_table():
         ("table" text, 
         "start" int, "connect" int, "select" int, "create_temp" int,
         "process" int, "csv" int, "s3" int, "insert" int, "clean_csv" int,
-        "tests" int, "replace_old" int, "drop_old" int, "finish" int)
+        "tests" int, "replace_old" int, "drop_old" int, "make_snapshot" int,
+        "finish" int)
     """,
     )
 

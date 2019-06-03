@@ -53,11 +53,13 @@ def test_load_grant_select_statements(db_str):
 
     cities = load_table_details(db_str, "first.cities")
     grant = cities.load_grant_select_statements()
-    assert grant == "GRANT SELECT ON first.cities_duro_temp TO jane, john"
+    assert pytest.similar(grant,
+                          "GRANT SELECT ON first.cities_duro_temp TO jane, john")
 
     countries = load_table_details(db_str, "first.countries")
     grant = countries.load_grant_select_statements()
-    assert grant == "GRANT SELECT ON first.countries_duro_temp TO joan, john"
+    assert pytest.similar(grant,
+                          "GRANT SELECT ON first.countries_duro_temp TO joan, john")
 
 
 def test_has_snapshots(db_str):

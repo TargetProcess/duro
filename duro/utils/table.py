@@ -4,6 +4,7 @@ from typing import NamedTuple, Dict, Optional
 from utils.utils import convert_interval_to_integer
 
 temp_postfix = "_duro_temp"
+history_postfix = "_history"
 
 
 class DistSortKeys(NamedTuple):
@@ -32,11 +33,11 @@ class Table:
         self.force = force
         self.waiting = waiting
 
-        self._snapshots_interval = convert_interval_to_integer(
+        self.snapshots_interval_mins = convert_interval_to_integer(
             self.config.get("snapshots_interval")
         )
 
-        self._snapshots_stored_for = convert_interval_to_integer(
+        self.snapshots_stored_for_mins = convert_interval_to_integer(
             self.config.get("snapshots_stored_for")
         )
 
@@ -68,11 +69,13 @@ class Table:
     def get_query_with_dist_sort_keys(self) -> str:
         query = self.query.rstrip(";\n")
         keys = self.load_dist_sort_keys()
-        return f"""CREATE TABLE {self.name}{temp_postfix}
-                {keys.distkey} {keys.sortkey} {keys.diststyle}
-                AS (
+        return f"""
+            CREATE TABLE {self.name}{temp_postfix}
+            {keys.distkey} {keys.sortkey} {keys.diststyle}
+            AS (
                 {query}
-                );"""
+            );
+        """
 
     def load_grant_select_statements(self) -> str:
         if not self.config:
@@ -80,11 +83,13 @@ class Table:
 
         users = self.config.get("grant_select")
         if users is not None:
-            return f"""GRANT SELECT ON {self.name}{temp_postfix} TO {self.config[
-                'grant_select']}"""
+            return f"""
+                GRANT SELECT ON {self.name}{temp_postfix} 
+                TO {self.config['grant_select']}
+            """
 
         return ""
 
     @property
     def store_snapshots(self) -> bool:
-        return bool(self._snapshots_interval)
+        return bool(self.snapshots_interval_mins)

@@ -15,6 +15,7 @@ events = {
     "tests": "Run tests",
     "replace_old": "Replaced old table",
     "drop_old": "Dropped old table",
+    "make_snapshot": "Made snapshot"
 }
 
 

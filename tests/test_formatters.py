@@ -31,6 +31,7 @@ def test_print_log():
         "tests": 1522151799,
         "replace_old": 1522151825,
         "drop_old": 1522151865,
+        "make_snapshot": 1522151872
     }
     printed = print_log(log)
     assert printed == [
@@ -42,8 +43,9 @@ def test_print_log():
         "14:56:39: Run tests (6s)",
         "14:57:05: Replaced old table (26s)",
         "14:57:45: Dropped old table (40s)",
+        "14:57:52: Made snapshot (7s)",
     ]
-    assert len(printed) == 8
+    assert len(printed) == 9
 
 
 def test_prepare_table_details():
@@ -60,7 +62,8 @@ def test_prepare_table_details():
         "tests": 1522151799,
         "replace_old": 1522151825,
         "drop_old": 1522151865,
-        "finish": 1522151865,
+        "make_snapshot": 1522151872,
+        "finish": 1522151872,
     }
     assert prepare_table_details([log]) == ([], [])
 
@@ -76,9 +79,10 @@ def test_prepare_table_details():
                 "14:56:39: Run tests (6s)",
                 "14:57:05: Replaced old table (26s)",
                 "14:57:45: Dropped old table (40s)",
+                "14:57:52: Made snapshot (7s)",
             ]
         ],
-        [{"date": "2018-03-27 11:54:58+00:00", "duration": 167}],
+        [{"date": "2018-03-27 11:54:58+00:00", "duration": 174}],
     )
 
 

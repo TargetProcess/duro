@@ -1,10 +1,14 @@
+from datetime import timedelta
+from typing import Tuple
+
 import arrow
 import psycopg2
+from psycopg2.errorcodes import WRONG_OBJECT_TYPE, UNDEFINED_TABLE, UNDEFINED_COLUMN
 
 from duro.credentials import redshift_credentials
 from utils.errors import TableCreationError, RedshiftConnectionError
 from duro.utils.logger import log_action
-from duro.utils.table import Table, temp_postfix
+from duro.utils.table import Table, temp_postfix, history_postfix
 
 
 @log_action("create Redshift connection")
@@ -35,43 +39,109 @@ def create_temp_table(table: Table, connection) -> int:
 
 
 @log_action("drop temporary table")
-def drop_temp_table(table: str, connection):
-    drop_table(f"{table}{temp_postfix}", connection)
+def drop_temp_table(table_name: str, connection):
+    drop_table(f"{table_name}{temp_postfix}", connection)
 
 
 @log_action("drop old table")
-def drop_old_table(table: str, connection):
-    drop_table(f"{table}_duro_old", connection)
+def drop_old_table(table_name: str, connection):
+    drop_table(f"{table_name}_duro_old", connection)
 
 
-def drop_table(table: str, connection):
+def drop_table(table_name: str, connection):
     with connection.cursor() as cursor:
-        query_drop = f"DROP TABLE IF EXISTS {table};"
+        query_drop = f"DROP TABLE IF EXISTS {table_name};"
         cursor.execute(query_drop)
 
 
 @log_action("replace old table")
-def replace_old_table(table: str, connection):
-    short_table_name = table.split(".")[-1]
+def replace_old_table(table_name: str, connection):
+    short_table_name = table_name.split(".")[-1]
 
-    drop_view(table, connection)
+    drop_view(table_name, connection)
 
     with connection.cursor() as cursor:
         query_replace = f"""
-            DROP TABLE IF EXISTS {table}_duro_old;
-            CREATE TABLE IF NOT EXISTS {table} (id int);
-            ALTER TABLE {table} RENAME TO {short_table_name}_duro_old;
-            ALTER TABLE {table}{temp_postfix} RENAME TO {short_table_name};
+            DROP TABLE IF EXISTS {table_name}_duro_old;
+            CREATE TABLE IF NOT EXISTS {table_name} (id int);
+            ALTER TABLE {table_name} RENAME TO {short_table_name}_duro_old;
+            ALTER TABLE {table_name}{temp_postfix} RENAME TO {short_table_name};
             """
         cursor.execute(query_replace)
 
 
-def drop_view(table: str, connection):
+def make_snapshot(table: Table, connection):
+    newest_snapshot, oldest_snapshot = get_snapshot_dates(table.name, connection)
+    if not newest_snapshot:
+        create_snapshots_table(table.name, connection)
+
+    insert_new_snapshot_data(table.name, connection)
+    if arrow.now() - oldest_snapshot > timedelta(table.snapshots_stored_for_mins):
+        remove_old_snapshots(table, connection)
+
+
+@log_action("get earliest and latest snapshot dates")
+def get_snapshot_dates(table_name: str, connection) -> Tuple:
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"""
+                select min(snapshot_timestamp),
+                    max(snapshot_timestamp)
+                from {table_name}{history_postfix}
+            """
+            )
+
+            return cursor.fetchone()
+
+    except psycopg2.ProgrammingError as e:
+        if e.pgcode in (UNDEFINED_TABLE, UNDEFINED_COLUMN):
+            return None, None
+
+
+@log_action("create snapshots table")
+def create_snapshots_table(table_name: str, connection):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            create table {table_name}{history_postfix} as (
+                select *, current_timestamp as snapshot_timestamp
+                from {table_name}
+            );
+        """
+        )
+
+
+@log_action("insert new snapshot data")
+def insert_new_snapshot_data(table_name: str, connection):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            insert into {table_name}{history_postfix}
+            select *, current_timestamp
+            from {table_name} 
+        """
+        )
+
+
+@log_action("remove old snapshots")
+def remove_old_snapshots(table: Table, connection):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            delete from {table.name}{history_postfix}
+            where datediff('mins', snapshot_timestamp, 
+                current_timestamp) > {table.snapshots_stored_for_mins}
+        """
+        )
+
+
+def drop_view(table_name: str, connection):
     with connection.cursor() as cursor:
         try:
-            cursor.execute(f"DROP VIEW IF EXISTS {table};")
+            cursor.execute(f"DROP VIEW IF EXISTS {table_name};")
         except psycopg2.ProgrammingError as e:
-            if e.pgcode == "42809":
+            if e.pgcode == WRONG_OBJECT_TYPE:
                 connection.rollback()
             else:
                 raise

@@ -9,6 +9,10 @@ from duro.create.redshift import (
     drop_temp_table,
     drop_view,
     replace_old_table,
+    get_snapshot_dates,
+    create_snapshots_table,
+    insert_new_snapshot_data,
+    remove_old_snapshots,
 )
 
 
@@ -90,4 +94,54 @@ def test_replace_old_table():
             ALTER TABLE first.cities RENAME TO cities_duro_old;
             ALTER TABLE first.cities_duro_temp RENAME TO cities;
         """,
+    )
+
+
+def test_get_snapshot_dates():
+    get_snapshot_dates("first.cities", connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
+        """
+           select min(snapshot_timestamp),
+                max(snapshot_timestamp)
+           from first.cities_history
+        """
+    )
+
+
+def test_create_snapshots_table():
+    create_snapshots_table("first.cities", connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
+        """
+           create table first.cities_history as (
+                select *, current_timestamp as snapshot_timestamp
+                from first.cities
+            );
+        """
+    )
+
+
+def test_insert_new_snapshot_data():
+    insert_new_snapshot_data("first.cities", connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
+        """
+           insert into first.cities_history
+           select *, current_timestamp
+           from first.cities
+        """
+    )
+
+
+def test_remove_old_snapshots(table):
+    table.snapshots_stored_for_mins = 180
+    remove_old_snapshots(table, connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
+        """
+           delete from first.cities_history
+           where datediff('mins', snapshot_timestamp, 
+                current_timestamp) > 180
+        """
     )
