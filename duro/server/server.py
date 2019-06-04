@@ -105,7 +105,7 @@ def show_table_details(table: str):
 def register_update_request():
     table = request.form["table"]
     force_tree_update = int(request.form.get("tree", 0))
-    if is_running(table, DATABASE):
+    if is_running(DATABASE, table):
         return jsonify({"message": "Already running"})
 
     set_table_for_update(get_db(), table, force_tree_update)
