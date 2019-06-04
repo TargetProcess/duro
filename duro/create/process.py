@@ -37,9 +37,7 @@ def process_and_upload_data(
     upload_to_s3(filename)
     ts.log("s3")
 
-    drop_and_create_query = build_drop_and_create_query(
-        table, views_path
-    )
+    drop_and_create_query = build_drop_and_create_query(table, views_path)
     timestamp = copy_to_redshift(
         filename, table.name, connection, drop_and_create_query
     )
@@ -108,12 +106,12 @@ def build_drop_and_create_query(table: Table, views_path: str):
         create_query += f"{keys.sortkey}\n"
 
     grant_select = table.load_grant_select_statements()
-    return f"DROP TABLE IF EXISTS {table}{temp_postfix}; {create_query}; {grant_select}"
+    return f"DROP TABLE IF EXISTS {table.name}{temp_postfix}; {create_query}; {grant_select}"
 
 
 @log_action("insert processed data into Redshift table")
 def copy_to_redshift(
-    filename: str, table: str, connection, drop_and_create_query: str
+    filename: str, table_name: str, connection, drop_and_create_query: str
 ) -> int:
     try:
         with connection.cursor() as cursor:
@@ -121,7 +119,7 @@ def copy_to_redshift(
             connection.commit()
             cursor.execute(
                 f"""
-                COPY {table}{temp_postfix} 
+                COPY {table_name}{temp_postfix} 
                 FROM 's3://{s3_credentials()["bucket"]}/{filename}'
                 --region 'us-east-1'
                 access_key_id '{s3_credentials()["aws_access_key_id"]}'
@@ -134,4 +132,4 @@ def copy_to_redshift(
             connection.commit()
             return arrow.now().timestamp
     except psycopg2.Error:
-        raise RedshiftCopyError(table)
+        raise RedshiftCopyError(table_name)
