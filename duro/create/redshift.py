@@ -5,10 +5,10 @@ import arrow
 import psycopg2
 from psycopg2.errorcodes import WRONG_OBJECT_TYPE, UNDEFINED_TABLE, UNDEFINED_COLUMN
 
-from duro.credentials import redshift_credentials
+from credentials import redshift_credentials
 from utils.errors import TableCreationError, RedshiftConnectionError
-from duro.utils.logger import log_action
-from duro.utils.table import Table, temp_postfix, history_postfix
+from utils.logger import log_action
+from utils.table import Table, temp_postfix, history_postfix
 
 
 @log_action("create Redshift connection")
@@ -74,10 +74,17 @@ def make_snapshot(table: Table, connection):
     newest_snapshot, oldest_snapshot = get_snapshot_dates(table.name, connection)
     if not newest_snapshot:
         create_snapshots_table(table.name, connection)
+        insert_new_snapshot_data(table.name, connection)
 
-    insert_new_snapshot_data(table.name, connection)
-    if arrow.now() - oldest_snapshot > timedelta(table.snapshots_stored_for_mins):
-        remove_old_snapshots(table, connection)
+    if newest_snapshot:
+        newest_snapshot_age = (arrow.now() - newest_snapshot).seconds
+        if newest_snapshot_age > table.snapshots_interval_mins * 60:
+            insert_new_snapshot_data(table.name, connection)
+
+    if oldest_snapshot:
+        oldest_snapshot_age = (arrow.now() - oldest_snapshot).seconds
+        if oldest_snapshot_age > table.snapshots_stored_for_mins * 60:
+            remove_old_snapshots(table, connection)
 
 
 @log_action("get earliest and latest snapshot dates")
@@ -107,7 +114,9 @@ def create_snapshots_table(table_name: str, connection):
             create table {table_name}{history_postfix} as (
                 select *, current_timestamp as snapshot_timestamp
                 from {table_name}
+                limit 1
             );
+            truncate table {table_name}{history_postfix};
         """
         )
 

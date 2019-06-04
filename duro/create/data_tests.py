@@ -1,9 +1,9 @@
 import os
 from typing import Tuple, List, Optional
 
-from duro.utils.file_utils import read_file
-from duro.utils.logger import log_action, setup_logger
-from duro.utils.table import temp_postfix
+from utils.file_utils import read_file
+from utils.logger import log_action, setup_logger
+from utils.table import temp_postfix
 
 TestResults = Tuple[bool, Optional[List]]
 

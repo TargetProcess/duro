@@ -117,7 +117,9 @@ def test_create_snapshots_table():
            create table first.cities_history as (
                 select *, current_timestamp as snapshot_timestamp
                 from first.cities
+                limit 1
             );
+            truncate table first.cities_history;
         """
     )
 
