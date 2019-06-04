@@ -53,8 +53,9 @@ def create_table(table: Table, db_path: str, views_path: str, remaining_tables: 
     ts.log("drop_old")
 
     if table.store_snapshots:
-        make_snapshot(table, connection)
-        ts.log("make_snapshot")
+        made_snapshot = make_snapshot(table, connection)
+        if made_snapshot:
+            ts.log("make_snapshot")
 
     connection.close()
 

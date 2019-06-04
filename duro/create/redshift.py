@@ -70,21 +70,25 @@ def replace_old_table(table_name: str, connection):
         cursor.execute(query_replace)
 
 
-def make_snapshot(table: Table, connection):
+def make_snapshot(table: Table, connection) -> bool:
     newest_snapshot, oldest_snapshot = get_snapshot_dates(table.name, connection)
     if not newest_snapshot:
         create_snapshots_table(table.name, connection)
         insert_new_snapshot_data(table.name, connection)
+        return True
 
     if newest_snapshot:
         newest_snapshot_age = (arrow.now() - newest_snapshot).seconds
         if newest_snapshot_age > table.snapshots_interval_mins * 60:
             insert_new_snapshot_data(table.name, connection)
+            return True
 
     if oldest_snapshot:
         oldest_snapshot_age = (arrow.now() - oldest_snapshot).seconds
         if oldest_snapshot_age > table.snapshots_stored_for_mins * 60:
             remove_old_snapshots(table, connection)
+
+    return False
 
 
 @log_action("get earliest and latest snapshot dates")
