@@ -78,14 +78,14 @@ def make_snapshot(table: Table, connection) -> bool:
         return True
 
     if newest_snapshot:
-        newest_snapshot_age = (arrow.now() - newest_snapshot).seconds
-        if newest_snapshot_age > table.snapshots_interval_mins * 60:
+        newest_snapshot_age = arrow.now() - newest_snapshot
+        if newest_snapshot_age > timedelta(minutes=table.snapshots_interval_mins):
             insert_new_snapshot_data(table.name, connection)
             return True
 
     if oldest_snapshot:
-        oldest_snapshot_age = (arrow.now() - oldest_snapshot).seconds
-        if oldest_snapshot_age > table.snapshots_stored_for_mins * 60:
+        oldest_snapshot_age = arrow.now() - oldest_snapshot
+        if oldest_snapshot_age > timedelta(minutes=table.snapshots_stored_for_mins):
             remove_old_snapshots(table, connection)
 
     return False
