@@ -102,8 +102,8 @@ def test_get_snapshot_dates():
     assert pytest.similar(
         redshift_execute.last_query,
         """
-           select min(snapshot_timestamp),
-                max(snapshot_timestamp)
+           select max(snapshot_timestamp),
+                min(snapshot_timestamp)
            from first.cities_history
         """
     )

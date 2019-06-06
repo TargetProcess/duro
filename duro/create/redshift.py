@@ -97,8 +97,8 @@ def get_snapshot_dates(table_name: str, connection) -> Tuple:
         with connection.cursor() as cursor:
             cursor.execute(
                 f"""
-                select min(snapshot_timestamp),
-                    max(snapshot_timestamp)
+                select max(snapshot_timestamp),
+                    min(snapshot_timestamp)
                 from {table_name}{history_postfix}
             """
             )
