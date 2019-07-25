@@ -1,7 +1,7 @@
 import csv
 import gzip
 import importlib.machinery
-from os import makedirs
+import os
 from typing import List, Dict, Tuple, Callable
 
 import arrow
@@ -30,12 +30,14 @@ def process_and_upload_data(
     current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
     filename = f"{folder}/{table}-{current_time}.csv.gzip"
 
-    makedirs(folder, exist_ok=True)
+    os.makedirs(folder, exist_ok=True)
     save_to_csv(processed_data, columns, filename)
     ts.log("csv")
 
     upload_to_s3(filename)
     ts.log("s3")
+
+    os.remove(filename)
 
     drop_and_create_query = build_drop_and_create_query(table, views_path)
     timestamp = copy_to_redshift(
