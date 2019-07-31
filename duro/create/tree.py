@@ -28,24 +28,21 @@ def create_tree(
     root: str,
     global_config: GlobalConfig,
     interval: int = None,
-    remaining_tables: int = 1,
 ):
     db = global_config.db_path
     table = load_table_details(db, root)
     table.interval = table.interval or interval
 
-    if not should_be_created(db, table, remaining_tables):
+    if not should_be_created(db, table):
         return
 
     children = list_children_for_table(root, global_config.graph)
-    remaining_tables += len(children)
-    logger.info(f"Tables remaining: {remaining_tables}")
 
-    create_children(children, global_config, remaining_tables, table)
+    create_children(children, global_config, table)
 
     try:
         logger.info(f"Creating {table.name}")
-        create_table(table, db, global_config.views_path, remaining_tables)
+        create_table(table, db, global_config.views_path)
     except MaterializationError as e:
         logger.error(e)
         reset_start(db, table.name)
@@ -53,14 +50,14 @@ def create_tree(
 
 
 def create_children(
-    children: List, global_config: GlobalConfig, remaining_tables: int, table: Table
+    children: List, global_config: GlobalConfig, table: Table
 ):
     if children:
         logger.info(f"Creating children for {table.name}")
 
     for child in children:
         mark_table_as_waiting(global_config.db_path, table.name)
-        create_tree(child, global_config, table.interval, remaining_tables)
+        create_tree(child, global_config, table.interval)
         mark_table_as_not_waiting(global_config.db_path, table.name)
 
 
@@ -73,7 +70,7 @@ def list_children_for_table(root: str, graph: nx.DiGraph) -> List:
         raise TableNotFoundInGraphError(e)
 
 
-def should_be_created(db_path: str, table: Table, remaining_tables: int = 0) -> bool:
+def should_be_created(db_path: str, table: Table) -> bool:
     waiting, waiting_too_long = is_waiting(db_path, table.name)
 
     if waiting and not waiting_too_long:
@@ -91,8 +88,6 @@ def should_be_created(db_path: str, table: Table, remaining_tables: int = 0) -> 
         finished = wait_till_finished(db_path, table.name)
 
         if finished:
-            remaining_tables -= 1
-            logger.info(f"Tables remaining: {remaining_tables}")
             return False
 
     if table.force:
@@ -108,8 +103,6 @@ def should_be_created(db_path: str, table: Table, remaining_tables: int = 0) -> 
 
     if fresh:
         logger.info(f"{table.name} is fresh enough")
-        remaining_tables -= 1
-        logger.info(f"Tables remaining: {remaining_tables}")
         return False
 
     return True

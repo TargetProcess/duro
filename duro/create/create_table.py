@@ -18,7 +18,7 @@ from utils.table import Table
 
 # pylint: disable=no-member
 # noinspection PyUnresolvedReferences
-def create_table(table: Table, db_path: str, views_path: str, remaining_tables: int):
+def create_table(table: Table, db_path: str, views_path: str):
     logger = setup_logger(table.name)
     ts = Timestamps()
     ts.log("start")
@@ -61,5 +61,3 @@ def create_table(table: Table, db_path: str, views_path: str, remaining_tables: 
 
     update_last_created(db_path, table.name, creation_timestamp, ts.duration)
     log_timestamps(db_path, table.name, ts)
-    remaining_tables -= 1
-    logger.info(f"Tables remaining: {remaining_tables}")
