@@ -143,8 +143,9 @@ def remove_old_snapshots(table: Table, connection):
         cursor.execute(
             f"""
             delete from {table.name}{history_postfix}
-            where datediff('mins', snapshot_timestamp, 
-                current_timestamp) > {table.snapshots_stored_for_mins}
+            where datediff('mins', 
+                snapshot_timestamp::timestamp, 
+                current_timestamp::timestamp) > {table.snapshots_stored_for_mins}
         """
         )
 
