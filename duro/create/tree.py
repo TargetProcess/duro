@@ -15,7 +15,11 @@ from create.sqlite import (
     mark_table_as_waiting,
 )
 from create.create_table import create_table
-from utils.errors import MaterializationError, TableNotFoundInGraphError
+from utils.errors import (
+    MaterializationError,
+    TableNotFoundInGraphError,
+    RedshiftConnectionError,
+)
 from notifications.slack import send_slack_notification
 from utils.global_config import GlobalConfig
 from utils.logger import setup_logger
@@ -24,11 +28,7 @@ from utils.table import Table
 logger = setup_logger()
 
 
-def create_tree(
-    root: str,
-    global_config: GlobalConfig,
-    interval: int = None,
-):
+def create_tree(root: str, global_config: GlobalConfig, interval: int = None):
     db = global_config.db_path
     table = load_table_details(db, root)
     table.interval = table.interval or interval
@@ -43,15 +43,17 @@ def create_tree(
     try:
         logger.info(f"Creating {table.name}")
         create_table(table, db, global_config.views_path)
+    except RedshiftConnectionError as e:
+        logger.error(e)
+        reset_start(db, table.name)
+        send_slack_notification(str(e), str(e))
     except MaterializationError as e:
         logger.error(e)
         reset_start(db, table.name)
         send_slack_notification(str(e), f"Error while creating {table.name}")
 
 
-def create_children(
-    children: List, global_config: GlobalConfig, table: Table
-):
+def create_children(children: List, global_config: GlobalConfig, table: Table):
     if children:
         logger.info(f"Creating children for {table.name}")
 
