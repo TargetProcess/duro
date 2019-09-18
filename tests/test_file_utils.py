@@ -46,6 +46,9 @@ def test_parse_filename():
     assert parse_filename("second/first.cities.sql") == ("first.cities", None)
     assert parse_filename("first/first.cities — 1h.sql") == ("first.cities", "1h")
     assert parse_filename("second/first.cities - 1h.sql") == ("first.cities", "1h")
+    assert parse_filename("second/first.cities 1h.sql") == ("first.cities", "1h")
+    assert parse_filename("second/first.cities- 1h.sql") == ("first.cities", "1h")
+    assert parse_filename("second/first.cities-1h.sql") == ("first.cities", "1h")
 
 
 def test_load_table_from_file(views_path):
