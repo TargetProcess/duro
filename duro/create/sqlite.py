@@ -246,7 +246,7 @@ def get_tables_to_create(db_str: str) -> List[Tuple]:
             WHERE 
                 (
                     force = 1
-                    OR (strftime('%s', 'now') - last_created) / 60 - interval > 0
+                    OR (strftime('%s', 'now') - started) / 60 - interval > 0
                     OR last_created IS NULL
                 )
                 AND deleted IS NULL
