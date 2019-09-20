@@ -31,7 +31,7 @@ def load_table_from_file(views_path: str, filename: str) -> TableFile:
 
 def parse_filename(filename: str) -> Tuple:
     short_filename = os.path.splitext(filename)[0]
-    split = re.split("[-—– ]", short_filename)
+    split = re.split("[-—–  ]", short_filename)
     interval = split[-1] if len(split) > 1 else None
     folder, table = split[0].split("/") if "/" in split[0] else (None, split[0])
     if "." in table:

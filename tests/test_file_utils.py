@@ -19,7 +19,8 @@ from duro.utils.file_utils import (
     is_processor_select_query,
     has_processor,
     list_files,
-    load_select_query)
+    load_select_query,
+)
 
 
 def filenames(views_path):
@@ -49,6 +50,7 @@ def test_parse_filename():
     assert parse_filename("second/first.cities 1h.sql") == ("first.cities", "1h")
     assert parse_filename("second/first.cities- 1h.sql") == ("first.cities", "1h")
     assert parse_filename("second/first.cities-1h.sql") == ("first.cities", "1h")
+    assert parse_filename("first/cities — 24h.sql") == ("first.cities", "24h")
 
 
 def test_load_table_from_file(views_path):
@@ -233,7 +235,8 @@ def test_list_files(views_path):
 
 def test_list_tests(views_path):
     tests = list_tests(views_path)
-    assert sorted(tests) == ["first.cities_test",
-                             "first.countries_detailed_test",
-                             "first.countries_test"
-                             ]
+    assert sorted(tests) == [
+        "first.cities_test",
+        "first.countries_detailed_test",
+        "first.countries_test",
+    ]

@@ -143,7 +143,8 @@ def test_remove_old_snapshots(table):
         redshift_execute.last_query,
         """
            delete from first.cities_history
-           where datediff('mins', snapshot_timestamp, 
-                current_timestamp) > 180
+           where datediff('mins', 
+                snapshot_timestamp::timestamp, 
+                current_timestamp::timestamp) > 180
         """
     )
