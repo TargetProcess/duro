@@ -94,3 +94,10 @@ class HistoryTableCreationError(CreationError):
     def __init__(self, table, details=None):
         message = f"""*Creation query failed for snapshots table for `{table}`* ```{details}```"""
         super().__init__(table, message)
+
+
+class QueryTimeoutError(CreationError):
+    """Took longer than expected (average creation time × multiplier)"""
+
+    def __init__(self, table, timeout: float):
+        super().__init__(table, f"Took longer than {int(timeout)} seconds, resetting")

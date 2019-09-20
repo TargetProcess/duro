@@ -14,7 +14,7 @@ from create.sqlite import (
     mark_table_as_not_waiting,
     mark_table_as_waiting,
 )
-from create.create_table import create_table
+from create.create_table import run_create_table
 from utils.errors import (
     MaterializationError,
     TableNotFoundInGraphError,
@@ -42,7 +42,7 @@ def create_tree(root: str, global_config: GlobalConfig, interval: int = None):
 
     try:
         logger.info(f"Creating {table.name}")
-        create_table(table, db, global_config.views_path)
+        run_create_table(table, db, global_config.views_path)
     except RedshiftConnectionError as e:
         logger.error(e)
         reset_start(db, table.name)

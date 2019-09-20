@@ -18,7 +18,7 @@ from utils.table import Table, temp_postfix
 
 def process_and_upload_data(
     table: Table, processor_name: str, connection, ts: Timestamps, views_path: str
-) -> int:
+):
     data = select_data(table.query, connection)
     ts.log("select")
 
@@ -40,12 +40,8 @@ def process_and_upload_data(
     os.remove(filename)
 
     drop_and_create_query = build_drop_and_create_query(table, views_path)
-    timestamp = copy_to_redshift(
-        filename, table.name, connection, drop_and_create_query
-    )
+    copy_to_redshift(filename, table.name, connection, drop_and_create_query)
     ts.log("insert")
-
-    return timestamp
 
 
 @log_action("select data for processing")
@@ -114,7 +110,7 @@ def build_drop_and_create_query(table: Table, views_path: str):
 @log_action("insert processed data into Redshift table")
 def copy_to_redshift(
     filename: str, table_name: str, connection, drop_and_create_query: str
-) -> int:
+):
     try:
         with connection.cursor() as cursor:
             cursor.execute(drop_and_create_query)
@@ -132,6 +128,5 @@ def copy_to_redshift(
             """
             )
             connection.commit()
-            return arrow.now().timestamp
     except psycopg2.Error:
         raise RedshiftCopyError(table_name)

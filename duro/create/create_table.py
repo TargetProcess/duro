@@ -1,3 +1,6 @@
+import asyncio
+from async_timeout import timeout
+
 from create.data_tests import load_tests, run_tests
 from create.process import process_and_upload_data
 from create.redshift import (
@@ -8,17 +11,36 @@ from create.redshift import (
     create_connection,
     make_snapshot,
 )
-from create.sqlite import update_last_created, log_timestamps, log_start
+from create.sqlite import (
+    update_last_created,
+    log_timestamps,
+    log_start,
+    get_average_completion_time,
+)
 from create.timestamps import Timestamps
-from utils.errors import TestsFailedError
+from utils.errors import TestsFailedError, QueryTimeoutError
 from utils.file_utils import load_processor
 from utils.logger import setup_logger
 from utils.table import Table
 
 
+def run_create_table(table: Table, db_path: str, views_path: str):
+    asyncio.run(run_with_timeout(table, db_path, views_path))
+
+
+async def run_with_timeout(table: Table, db_path: str, views_path: str):
+    timeout_length = 5 * get_average_completion_time(db_path, table.name)
+    print(f"timeout is {timeout_length}")
+    try:
+        async with timeout(timeout_length):
+            await create_table(table, db_path, views_path)
+    except asyncio.TimeoutError:
+        raise QueryTimeoutError(table, timeout_length)
+
+
 # pylint: disable=no-member
 # noinspection PyUnresolvedReferences
-def create_table(table: Table, db_path: str, views_path: str):
+async def create_table(table: Table, db_path: str, views_path: str):
     logger = setup_logger(table.name)
     ts = Timestamps()
     ts.log("start")
@@ -31,11 +53,9 @@ def create_table(table: Table, db_path: str, views_path: str):
 
     processor = load_processor(views_path, table.name)
     if processor:
-        creation_timestamp = process_and_upload_data(
-            table, processor, connection, ts, views_path
-        )
+        process_and_upload_data(table, processor, connection, ts, views_path)
     else:
-        creation_timestamp = create_temp_table(table, connection)
+        create_temp_table(table, connection)
         ts.log("create_temp")
 
     tests = load_tests(table.name, views_path)
@@ -59,5 +79,5 @@ def create_table(table: Table, db_path: str, views_path: str):
 
     connection.close()
 
-    update_last_created(db_path, table.name, creation_timestamp, ts.duration)
+    update_last_created(db_path, table.name, ts.start, ts.duration)
     log_timestamps(db_path, table.name, ts)

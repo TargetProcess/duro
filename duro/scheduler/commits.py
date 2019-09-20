@@ -23,14 +23,16 @@ def get_previous_commit(db: str) -> str:
     cursor = connection.cursor()
 
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS commits
-                            (hash text, processed integer)"""
+        """
+        CREATE TABLE IF NOT EXISTS commits
+        (hash text, processed integer)"""
     )
     connection.commit()
 
     cursor.execute(
-        """SELECT hash FROM commits
-                    ORDER BY processed DESC LIMIT 1"""
+        """
+        SELECT hash FROM commits
+        ORDER BY processed DESC LIMIT 1"""
     )
     result = cursor.fetchone()
 
