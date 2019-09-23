@@ -2,11 +2,12 @@ from typing import List
 
 import networkx as nx
 
+from scheduler.table_config import check_config_fields
 from utils.errors import RootsWithoutIntervalError, SchedulerError, TablesWithoutRequiredFiles
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
 from scheduler.graph import build_graph, save_graph_to_file, check_for_cycles
-from scheduler.sqlite import save_to_db
+from scheduler.sqlite import save_to_db, build_table_configs
 from scheduler.checks import find_tables_with_missing_files
 from utils.file_utils import load_tables_in_path
 from utils.global_config import load_global_config
@@ -62,7 +63,10 @@ def schedule(views_path: str, db_path: str, strict=False, use_git=False):
         check_for_cycles(graph, logger)
     check_for_missing_intervals(graph)
 
-    new, updated = save_to_db(graph, db_path, views_path, latest_commit)
+    tables_and_configs = build_table_configs(graph, views_path)
+    check_config_fields(tables_and_configs)
+
+    new, updated = save_to_db(db_path, tables_and_configs, latest_commit)
     message = build_notification_message(new, updated)
 
     if use_git:

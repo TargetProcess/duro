@@ -2,7 +2,11 @@ import os
 from functools import reduce
 from typing import Dict, List, Set
 
-from utils.file_utils import read_config
+import networkx as nx
+
+from utils.errors import ConfigFieldError
+from utils.file_utils import read_config, load_processor
+from utils.table import Table
 
 
 def parse_table_config(full_table_name: str, views_path: str) -> Dict:
@@ -62,3 +66,30 @@ def merge_permissions(acc: Set, value: str) -> Set:
     to_remove = {val[1:] for val in new_values if val[0] == "-"}
 
     return acc.union(to_add).difference(to_remove)
+
+
+def build_table_configs(graph: nx.DiGraph, views_path: str) -> List[Table]:
+    nodes = dict(graph.nodes(data=True))
+    return [
+        Table(
+            table,
+            data["contents"],
+            data["interval"],
+            parse_table_config(table, views_path),
+        )
+        for table, data in nodes.items()
+    ]
+
+
+def check_config_fields(tables: List[Table], views_path: str):
+    for table in tables:
+        if load_processor(table.name, views_path):
+            continue
+
+        distkey, sortkey = table.config.get("distkey"), table.config.get("sortkey")
+
+        if distkey and distkey not in table.query:
+            raise ConfigFieldError(f"Distkey {distkey} missing from select query for {table.name}.")
+
+        if sortkey and sortkey not in table.query:
+            raise ConfigFieldError(f"Sortkey {sortkey} missing from select query for {table.name}.")

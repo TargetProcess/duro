@@ -2,7 +2,7 @@ from time import sleep
 
 import pytest
 
-from utils.errors import GitError
+from utils.errors import GitError, ConfigFieldError
 from duro.scheduler.commits import (
     get_all_commits,
     get_previous_commit,
@@ -11,7 +11,6 @@ from duro.scheduler.commits import (
 from duro.scheduler.graph import build_graph
 from duro.scheduler.sqlite import (
     save_commit,
-    build_table_configs,
     is_already_in_db,
     insert_table,
     update_table,
@@ -19,7 +18,12 @@ from duro.scheduler.sqlite import (
     should_be_updated,
     save_to_db,
 )
-from duro.scheduler.table_config import parse_permissions, parse_table_config
+from duro.scheduler.table_config import (
+    parse_permissions,
+    parse_table_config,
+    build_table_configs,
+    check_config_fields,
+)
 from duro.utils.file_utils import load_tables_in_path
 from duro.utils.table import Table
 
@@ -82,10 +86,12 @@ def test_build_table_configs(views_path):
     second_child = [t for t in configs if t.name == "second.child"][0]
     assert second_child.query == "select city, country from first.cities"
     assert second_child.interval is None
-    assert second_child.config == {"distkey": "city",
-                                   "diststyle": "all",
-                                   "snapshots_interval": "24h",
-                                   "snapshots_stored_for": "90d"}
+    assert second_child.config == {
+        "distkey": "city",
+        "diststyle": "all",
+        "snapshots_interval": "24h",
+        "snapshots_stored_for": "90d",
+    }
 
 
 def test_parse_permissions():
@@ -234,7 +240,8 @@ def test_update_table(empty_db_cursor):
 def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
     tables = load_tables_in_path(views_path)
     graph = build_graph(tables)
-    save_to_db(graph, empty_db_str, views_path, None)
+    tables_and_queries = build_table_configs(graph, views_path)
+    save_to_db(empty_db_str, tables_and_queries, None)
     empty_db_cursor.execute(
         """select * from tables 
                 where table_name = 'second.parent'
@@ -248,7 +255,8 @@ def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
     assert second_parent[7] == 1
 
     graph.add_node("schema.table", {"contents": "select", "interval": 40})
-    save_to_db(graph, empty_db_str, views_path, None)
+    tables_and_queries = build_table_configs(graph, views_path)
+    save_to_db(empty_db_str, tables_and_queries, None)
     empty_db_cursor.execute(
         """select * from tables 
                     where table_name = 'schema.table'
@@ -263,13 +271,14 @@ def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
     empty_db_cursor.execute("select count(*) from tables")
     assert empty_db_cursor.fetchone()[0] == 6
 
-    save_to_db(graph, empty_db_str, views_path, "commit_hash")
+    save_to_db(empty_db_str, tables_and_queries, "commit_hash")
     empty_db_cursor.execute("select * from commits")
     commit = empty_db_cursor.fetchone()
     assert commit[0] == "commit_hash"
 
     graph.remove_node("schema.table")
-    save_to_db(graph, empty_db_str, views_path, "commit_hash")
+    tables_and_queries = build_table_configs(graph, views_path)
+    save_to_db(empty_db_str, tables_and_queries, "commit_hash")
     empty_db_cursor.execute(
         """select count(*) from tables 
                         where table_name = 'schema.table'
@@ -277,3 +286,18 @@ def test_save_to_db(empty_db_str, views_path, empty_db_cursor):
                         """
     )
     assert empty_db_cursor.fetchone()[0] == 1
+
+
+def test_check_config_fields(views_path):
+    tables = load_tables_in_path(views_path)
+    graph = build_graph(tables)
+    tables_and_queries = build_table_configs(graph, views_path)
+    assert check_config_fields(tables_and_queries, views_path) is None
+
+    tables_and_queries[0].config["distkey"] = "new_field"
+    with pytest.raises(ConfigFieldError):
+        check_config_fields(tables_and_queries, views_path)
+
+    tables_and_queries[0].config["distkey"] = None
+    tables_and_queries[0].config["sortkey"] = "country"
+    assert check_config_fields(tables_and_queries, views_path) is None

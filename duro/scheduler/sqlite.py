@@ -2,19 +2,14 @@ import sqlite3
 from typing import List, Tuple, Optional
 
 import arrow
-import networkx as nx
-
-from scheduler.table_config import parse_table_config
 from utils.table import Table
 
 
 def save_to_db(
-    graph: nx.DiGraph, db_path: str, views_path: str, commit: Optional[str]
+    db_path: str, tables_and_queries: List[Table], commit: Optional[str]
 ) -> Tuple:
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
-
-    tables_and_queries = build_table_configs(graph, views_path)
 
     updates = save_tables(tables_and_queries, cursor)
     save_commit(commit, cursor)
@@ -23,19 +18,6 @@ def save_to_db(
     connection.commit()
     connection.close()
     return updates
-
-
-def build_table_configs(graph: nx.DiGraph, views_path: str) -> List[Table]:
-    nodes = dict(graph.nodes(data=True))
-    return [
-        Table(
-            table,
-            data["contents"],
-            data["interval"],
-            parse_table_config(table, views_path),
-        )
-        for table, data in nodes.items()
-    ]
 
 
 def save_tables(tables_and_queries: List[Table], cursor) -> Tuple[List, List]:

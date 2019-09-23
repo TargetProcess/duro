@@ -36,6 +36,10 @@ class GitError(SchedulerError):
     """When we couldn’t fetch new commits"""
 
 
+class ConfigFieldError(SchedulerError):
+    """Distkey or sortkey for some table has a field that’s missing from SQL definition"""
+
+
 class TestsFailedError(CreationError):
     """When tests failed"""
 
