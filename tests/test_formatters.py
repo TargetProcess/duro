@@ -33,17 +33,17 @@ def test_print_log():
         "drop_old": 1522151865,
         "make_snapshot": 1522151872
     }
-    printed = print_log(log)
+    printed = print_log(log, "utc")
     assert printed == [
-        "Tuesday, March 27, 14:54:58",
-        "14:54:59: Connected to Redshift (1s)",
-        "14:56:13: Selected data from Redshift (1m 14s)",
-        "14:56:23: Created temporary table (10s)",
-        "14:56:33: Exported processed data to CSV (10s)",
-        "14:56:39: Run tests (6s)",
-        "14:57:05: Replaced old table (26s)",
-        "14:57:45: Dropped old table (40s)",
-        "14:57:52: Made snapshot (7s)",
+        "Tuesday, March 27, 11:54:58",
+        "11:54:59: Connected to Redshift (1s)",
+        "11:56:13: Selected data from Redshift (1m 14s)",
+        "11:56:23: Created temporary table (10s)",
+        "11:56:33: Exported processed data to CSV (10s)",
+        "11:56:39: Run tests (6s)",
+        "11:57:05: Replaced old table (26s)",
+        "11:57:45: Dropped old table (40s)",
+        "11:57:52: Made snapshot (7s)",
     ]
     assert len(printed) == 9
 
@@ -65,21 +65,21 @@ def test_prepare_table_details():
         "make_snapshot": 1522151872,
         "finish": 1522151872,
     }
-    assert prepare_table_details([log]) == ([], [])
+    assert prepare_table_details([log], "utc") == ([], [])
 
     log["start"] = 1522151698
-    assert prepare_table_details([log]) == (
+    assert prepare_table_details([log], "utc") == (
         [
             [
-                "Tuesday, March 27, 14:54:58",
-                "14:54:59: Connected to Redshift (1s)",
-                "14:56:13: Selected data from Redshift (1m 14s)",
-                "14:56:23: Created temporary table (10s)",
-                "14:56:33: Exported processed data to CSV (10s)",
-                "14:56:39: Run tests (6s)",
-                "14:57:05: Replaced old table (26s)",
-                "14:57:45: Dropped old table (40s)",
-                "14:57:52: Made snapshot (7s)",
+                "Tuesday, March 27, 11:54:58",
+                "11:54:59: Connected to Redshift (1s)",
+                "11:56:13: Selected data from Redshift (1m 14s)",
+                "11:56:23: Created temporary table (10s)",
+                "11:56:33: Exported processed data to CSV (10s)",
+                "11:56:39: Run tests (6s)",
+                "11:57:05: Replaced old table (26s)",
+                "11:57:45: Dropped old table (40s)",
+                "11:57:52: Made snapshot (7s)",
             ]
         ],
         [{"date": "2018-03-27 11:54:58+00:00", "duration": 174}],
@@ -95,17 +95,17 @@ def test_format_as_human_date():
 
 def test_format_as_date():
     assert format_as_date(None) == ""
-    assert format_as_date(1522151698) == "2018-03-27T14:54:58+03:00"
+    assert format_as_date(1522151698, "utc") == "2018-03-27T11:54:58+00:00"
 
 
 def test_format_as_short_ts():
     assert format_as_short_ts(None) == ""
-    assert format_as_short_ts(1522151698) == "14:54:58"
+    assert format_as_short_ts(1522151698, "utc") == "11:54:58"
 
 
 def test_format_as_ts():
     assert format_as_ts(None) == ""
-    assert format_as_ts(1522151698) == "Tuesday, March 27, 14:54:58"
+    assert format_as_ts(1522151698, "utc") == "Tuesday, March 27, 11:54:58"
 
 
 def test_format_delta():

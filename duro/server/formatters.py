@@ -5,38 +5,38 @@ import arrow
 from create.timestamps import events
 
 
-def print_log(log: Dict) -> List:
-    result = [f'{format_as_ts(log["start"])}']
+def print_log(log: Dict, tz="local") -> List:
+    result = [f'{format_as_ts(log["start"], tz)}']
     prev_ts = log["start"]
     for key in events:
         if log[key] is not None and key != "start":
             next_ts = log[key]
             result.append(
-                f"{format_as_short_ts(log[key])}: "
+                f"{format_as_short_ts(log[key], tz)}: "
                 f"{events[key]} ({format_delta(prev_ts, next_ts)})"
             )
             prev_ts = next_ts
     return result
 
 
-def format_as_human_date(date: Optional[int]) -> str:
-    return arrow.get(date).to("local").humanize() if date is not None else ""
+def format_as_human_date(date: Optional[int], tz="local") -> str:
+    return arrow.get(date).to(tz).humanize() if date is not None else ""
 
 
-def format_as_date(date: Optional[int]) -> str:
-    return str(arrow.get(date).to("local")) if date is not None else ""
+def format_as_date(date: Optional[int], tz="local") -> str:
+    return str(arrow.get(date).to(tz)) if date is not None else ""
 
 
-def format_as_ts(date: Optional[int]) -> str:
+def format_as_ts(date: Optional[int], tz="local") -> str:
     return (
-        arrow.get(date).to("local").strftime("%A, %B %d, %H:%M:%S")
+        arrow.get(date).to(tz).strftime("%A, %B %d, %H:%M:%S")
         if date is not None
         else ""
     )
 
 
-def format_as_short_ts(date: Optional[int]) -> str:
-    return arrow.get(date).to("local").strftime("%H:%M:%S") if date is not None else ""
+def format_as_short_ts(date: Optional[int], tz="local") -> str:
+    return arrow.get(date).to(tz).strftime("%H:%M:%S") if date is not None else ""
 
 
 def format_delta(prev_ts: int, next_ts: int) -> str:
@@ -97,11 +97,11 @@ def format_job(job) -> Dict:
     return {"table": job["table"], "start": start, "finish": finish}
 
 
-def prepare_table_details(details: List) -> Tuple[List, List]:
+def prepare_table_details(details: List, tz="local") -> Tuple[List, List]:
     if len(details) == 1 and details[0]["start"] is None:
         return [], []
     return (
-        [print_log(d) for d in details],
+        [print_log(d, tz) for d in details],
         [
             {
                 "date": arrow.get(d["start"]).format(),
