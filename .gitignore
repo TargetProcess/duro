@@ -13,3 +13,5 @@ views
 duro.db
 venv
 dependencies.dot
+venvs
+tests/venvs

@@ -8,7 +8,7 @@ from duro.utils.file_utils import (
     is_processor_ddl,
     is_query,
     load_ddl_query,
-    load_processor,
+    find_processor,
     load_query,
     load_table_from_file,
     load_tables_in_path,
@@ -20,6 +20,8 @@ from duro.utils.file_utils import (
     has_processor,
     list_files,
     load_select_query,
+    find_requirements_txt,
+    is_requirements_txt,
 )
 
 
@@ -28,6 +30,7 @@ def filenames(views_path):
         os.path.join(views_path, "first", "countries — 1h.sql"),
         os.path.join(views_path, "first", "countries_select.sql"),
         os.path.join(views_path, "first", "countries.py"),
+        os.path.join(views_path, "first", "countries_requirements.txt"),
         os.path.join(views_path, "first", "cities_test.sql"),
         os.path.join(views_path, "first", "non-existent.sql"),
         os.path.join(views_path, "second", "child.sql"),
@@ -114,24 +117,84 @@ def test_convert_interval_to_integer():
 def test_is_processor_ddl(views_path):
     results = [is_processor_ddl(f) for f in filenames(views_path)]
 
-    assert results == [True, False, False, False, False, False, False, False, False]
+    assert results == [
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+    ]
 
 
 def test_is_query(views_path):
     results = [is_query(f) for f in filenames(views_path)]
 
-    assert results == [True, False, False, False, False, True, False, False, False]
+    assert results == [
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        True,
+        False,
+        False,
+        False,
+    ]
 
 
 def test_has_processor(views_path):
     results = [has_processor(f) for f in filenames(views_path)]
 
-    assert results == [True, False, True, False, False, False, False, False, False]
+    assert results == [
+        True,
+        False,
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+    ]
 
 
 def test_is_processor_select_query(views_path):
     results = [is_processor_select_query(f) for f in filenames(views_path)]
-    assert results == [False, True, False, False, False, False, False, False, False]
+    assert results == [
+        False,
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+    ]
+
+
+def test_is_requirements_txt(views_path):
+    results = [is_requirements_txt(f) for f in filenames(views_path)]
+    assert results == [
+        False,
+        False,
+        False,
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+    ]
 
 
 def test_is_test():
@@ -139,10 +202,7 @@ def test_is_test():
     assert is_test(None) is False
     assert is_test("table_tst.sql") is False
     assert is_test("table_test.sql") is True
-    # assert is_test("table_tst.sql", "table") is False
     assert is_test("table_test.sql") is True
-    # assert is_test("table_test.sql", "table") is True
-    # assert is_test("table_test.sql", "not_table") is True
 
 
 def test_is_processor():
@@ -150,8 +210,6 @@ def test_is_processor():
     assert is_processor(None) is False
     assert is_processor("table.py") is True
     assert is_processor("table.sql") is False
-    # assert is_processor("table.py", "table") is True
-    # assert is_processor("table.py", "not_table") is False
 
 
 def test_is_sql_query():
@@ -159,8 +217,6 @@ def test_is_sql_query():
     assert is_sql_query(None) is False
     assert is_sql_query("table.py") is False
     assert is_sql_query("table.sql") is True
-    # assert is_sql_query("table.sql", "not_table") is False
-    # assert is_sql_query("table.sql", "table") is True
 
 
 def test_load_ddl_query(views_path):
@@ -178,10 +234,10 @@ def test_load_ddl_query(views_path):
 
 
 def test_load_processor(views_path):
-    processor = load_processor(views_path, "first.countries")
+    processor = find_processor(views_path, "first.countries")
     assert processor == "./views/first/countries.py"
 
-    assert load_processor(views_path, "first.cities") == ""
+    assert find_processor(views_path, "first.cities") == ""
 
 
 def test_load_query(views_path):
@@ -214,7 +270,7 @@ def test_list_files(views_path):
     assert sql_files[1] == "./views/first/cities_test.sql"
 
     all_files = list_files(views_path, mask="*")
-    assert len(all_files) == 16
+    assert len(all_files) == 17
 
     no_files = list_files(views_path, match=lambda x: False)
     assert no_files == []
@@ -240,3 +296,11 @@ def test_list_tests(views_path):
         "first.countries_detailed_test",
         "first.countries_test",
     ]
+
+
+def test_find_requirements(views_path):
+    assert find_requirements_txt(views_path, "first.cities") == ""
+    assert (
+        find_requirements_txt(views_path, "first.countries")
+        == "./views/first/countries_requirements.txt"
+    )

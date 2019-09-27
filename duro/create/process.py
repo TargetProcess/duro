@@ -1,8 +1,8 @@
 import csv
 import gzip
-import importlib.machinery
 import os
-from typing import List, Dict, Tuple, Callable
+import subprocess
+from typing import List, Dict, Tuple
 
 import arrow
 import psycopg2
@@ -10,37 +10,34 @@ import boto3
 
 from create.timestamps import Timestamps
 from credentials import s3_credentials
-from utils.errors import ProcessorNotFoundError, RedshiftCopyError
-from utils.file_utils import load_ddl_query
+from utils.errors import RedshiftCopyError
+from utils.file_utils import load_ddl_query, find_requirements_txt
 from utils.logger import log_action
 from utils.table import Table, temp_postfix
 
 
 def process_and_upload_data(
-    table: Table, processor_name: str, connection, ts: Timestamps, views_path: str
+    table: Table, processor_path: str, connection, ts: Timestamps, views_path: str
 ):
     data = select_data(table.query, connection)
-    ts.log("select")
-
-    processing_function, columns = load_processor(processor_name)
-    processed_data, columns = process_data(data, processing_function, columns)
-    ts.log("process")
 
     folder = s3_credentials()["folder"]
-    current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
-    filename = f"{folder}/{table}-{current_time}.csv.gzip"
-
     os.makedirs(folder, exist_ok=True)
-    save_to_csv(processed_data, columns, filename)
-    ts.log("csv")
+    selected, processed = build_filenames(folder, table.name)
+    save_selected_to_csv(data, selected)
+    ts.log("select")
 
-    upload_to_s3(filename)
+    run_processor(views_path, processor_path, table.name, selected, processed)
+    ts.log("process")
+
+    upload_to_s3(processed)
     ts.log("s3")
 
-    os.remove(filename)
+    os.remove(selected)
+    os.remove(processed)
 
     drop_and_create_query = build_drop_and_create_query(table, views_path)
-    copy_to_redshift(filename, table.name, connection, drop_and_create_query)
+    copy_to_redshift(processed, table.name, connection, drop_and_create_query)
     ts.log("insert")
 
 
@@ -52,27 +49,38 @@ def select_data(query: str, connection) -> List[Dict]:
         return [dict(zip(columns, row)) for row in cursor]
 
 
-@log_action("load processing function from processor module")
-def load_processor(processor: str) -> Tuple:
-    try:
-        loader = importlib.machinery.SourceFileLoader(processor, processor)
-
-        # pylint: disable=deprecated-method
-        processor_module = loader.load_module()
-        return processor_module.process, processor_module.columns
-    except AttributeError:
-        raise ProcessorNotFoundError(processor)
+def build_filenames(folder: str, table_name: str) -> Tuple[str, str]:
+    current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
+    selected_filename = f"{folder}/{table_name}_select-{current_time}.csv.gzip"
+    processed_filename = f"{folder}/{table_name}-{current_time}.csv.gzip"
+    return selected_filename, processed_filename
 
 
-@log_action("process data")
-def process_data(
-    data: List[Dict], processing_function: Callable, columns: List
-) -> Tuple[List[Dict], List]:
-    return processing_function(data), columns
+@log_action("create virtual environment")
+def run_processor(
+    views_path: str,
+    processor_path: str,
+    table_name: str,
+    selected_filename: str,
+    processed_filename: str,
+):
+    venv_path = f"./venvs/{table_name}"
+    subprocess.run(["python", "-m", "venv", venv_path])
+    requirements = find_requirements_txt(views_path, table_name)
+    subprocess.run([f"{venv_path}/bin/pip", "install", "-r", requirements])
+    subprocess.run(
+        [
+            f"{venv_path}/bin/python",
+            processor_path,
+            selected_filename,
+            processed_filename,
+        ]
+    )
 
 
-@log_action("save processed data to CSV")
-def save_to_csv(data: List[Dict], columns: List, filename: str):
+@log_action("save selected data to CSV")
+def save_selected_to_csv(data: List[Dict], filename: str):
+    columns = data[0].keys()
     with gzip.open(filename, "wt", newline="") as output_file:
         dict_writer = csv.DictWriter(
             output_file, columns, delimiter=";", escapechar="\\"

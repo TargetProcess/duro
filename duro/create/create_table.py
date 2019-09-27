@@ -19,7 +19,7 @@ from create.sqlite import (
 )
 from create.timestamps import Timestamps
 from utils.errors import TestsFailedError, QueryTimeoutError
-from utils.file_utils import load_processor
+from utils.file_utils import find_processor
 from utils.logger import setup_logger
 from utils.table import Table
 
@@ -51,7 +51,7 @@ async def create_table(table: Table, db_path: str, views_path: str):
     connection = create_connection()
     ts.log("connect")
 
-    processor = load_processor(views_path, table.name)
+    processor = find_processor(views_path, table.name)
     if processor:
         process_and_upload_data(table, processor, connection, ts, views_path)
     else:

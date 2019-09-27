@@ -5,7 +5,7 @@ from typing import Dict, List, Set
 import networkx as nx
 
 from utils.errors import ConfigFieldError
-from utils.file_utils import read_config, load_processor
+from utils.file_utils import read_config, find_processor, load_ddl_query
 from utils.table import Table
 
 
@@ -83,13 +83,32 @@ def build_table_configs(graph: nx.DiGraph, views_path: str) -> List[Table]:
 
 def check_config_fields(tables: List[Table], views_path: str):
     for table in tables:
-        if load_processor(table.name, views_path):
+        distkey, sortkey = table.config.get("distkey"), table.config.get("sortkey")
+        if not distkey and not sortkey:
             continue
 
-        distkey, sortkey = table.config.get("distkey"), table.config.get("sortkey")
+        processor = find_processor(table.name, views_path)
+
+        if processor:
+            ddl_query = load_ddl_query(views_path, table.name)
+            if distkey and distkey not in ddl_query:
+                raise ConfigFieldError(
+                    f"Distkey {distkey} missing from create table query for {table.name}."
+                )
+
+            if sortkey and sortkey not in ddl_query:
+                raise ConfigFieldError(
+                    f"Sortkey {sortkey} missing from create table query for {table.name}."
+                )
+
+            continue
 
         if distkey and distkey not in table.query:
-            raise ConfigFieldError(f"Distkey {distkey} missing from select query for {table.name}.")
+            raise ConfigFieldError(
+                f"Distkey {distkey} missing from select query for {table.name}."
+            )
 
         if sortkey and sortkey not in table.query:
-            raise ConfigFieldError(f"Sortkey {sortkey} missing from select query for {table.name}.")
+            raise ConfigFieldError(
+                f"Sortkey {sortkey} missing from select query for {table.name}."
+            )

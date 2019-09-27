@@ -64,7 +64,7 @@ def schedule(views_path: str, db_path: str, strict=False, use_git=False):
     check_for_missing_intervals(graph)
 
     tables_and_configs = build_table_configs(graph, views_path)
-    check_config_fields(tables_and_configs)
+    check_config_fields(tables_and_configs, views_path)
 
     new, updated = save_to_db(db_path, tables_and_configs, latest_commit)
     message = build_notification_message(new, updated)

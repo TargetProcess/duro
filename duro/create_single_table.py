@@ -11,7 +11,7 @@ from create.redshift import (
 )
 from create.timestamps import Timestamps
 from scheduler.table_config import parse_table_config
-from utils.file_utils import load_processor, load_select_query
+from utils.file_utils import find_processor, load_select_query
 from utils.logger import setup_logger
 from utils.table import Table
 
@@ -24,7 +24,7 @@ def create_table(table: Table, views_path: str, verbose=False):
 
     connection = create_connection()
 
-    processor = load_processor(views_path, table.name)
+    processor = find_processor(views_path, table.name)
 
     if verbose:
         logger.info(f"Loaded processor: {processor}")

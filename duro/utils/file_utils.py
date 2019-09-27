@@ -98,6 +98,12 @@ def is_processor(filename: str) -> bool:
     return filename.endswith(".py")
 
 
+def is_requirements_txt(filename: str) -> bool:
+    if not filename:
+        return False
+    return filename.endswith("requirements.txt")
+
+
 def is_processor_select_query(filename: str) -> bool:
     if not filename or not filename.endswith(f"{select_postfix}.sql"):
         return False
@@ -133,8 +139,12 @@ def list_processors(views_path: str) -> List:
     return [parse_filename(filename)[0] for filename in short_filenames]
 
 
-def load_processor(views_path: str, table: str) -> str:
+def find_processor(views_path: str, table: str) -> str:
     return find_file_for_table(views_path, table, is_processor)
+
+
+def find_requirements_txt(views_path: str, table: str) -> str:
+    return find_file_for_table(views_path, table, is_requirements_txt)
 
 
 def load_ddl_query(views_path: str, table: str) -> str:
@@ -150,7 +160,7 @@ def load_query(views_path: str, table: str) -> str:
 
 
 def load_select_query(views_path: str, table: str) -> str:
-    if load_processor(views_path, table):
+    if find_processor(views_path, table):
         processor_select_query = find_file_for_table(
             views_path, table, is_processor_select_query
         )
@@ -167,6 +177,7 @@ def generate_possible_table_files(table: str) -> List:
         f"{schema}/{table}_test.sql",
         f"{schema}/{table}_select.sql",
         f"{schema}/{table}.py",
+        f"{schema}/{table}_requirements.txt",
     ]
     outside_folder_filenames = [f.replace("/", ".", 1) for f in inside_folder_filenames]
     return inside_folder_filenames + outside_folder_filenames
