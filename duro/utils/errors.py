@@ -105,3 +105,10 @@ class QueryTimeoutError(CreationError):
 
     def __init__(self, table, timeout: float):
         super().__init__(table, f"Took longer than {int(timeout)} seconds, resetting")
+
+
+class ProcessorRunError(CreationError):
+    """Processor process return nonzero code after completion"""
+    def __init__(self, table, details=None):
+        message = f"""*Select query failed for `{table}`* ```{details}```"""
+        super().__init__(table, message)

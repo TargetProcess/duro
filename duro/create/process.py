@@ -10,7 +10,7 @@ import boto3
 
 from create.timestamps import Timestamps
 from credentials import s3_credentials
-from utils.errors import RedshiftCopyError
+from utils.errors import RedshiftCopyError, ProcessorRunError
 from utils.file_utils import load_ddl_query, find_requirements_txt
 from utils.logger import log_action
 from utils.table import Table, temp_postfix
@@ -51,12 +51,12 @@ def select_data(query: str, connection) -> List[Dict]:
 
 def build_filenames(folder: str, table_name: str) -> Tuple[str, str]:
     current_time = arrow.now().strftime("%Y-%m-%d-%H-%M")
-    selected_filename = f"{folder}/{table_name}_select-{current_time}.csv.gzip"
-    processed_filename = f"{folder}/{table_name}-{current_time}.csv.gzip"
+    selected_filename = f"{folder}/{table_name}_select-{current_time}.csv"
+    processed_filename = f"{folder}/{table_name}-{current_time}.csv"
     return selected_filename, processed_filename
 
 
-@log_action("create virtual environment")
+@log_action("create virtual environment and run processor")
 def run_processor(
     views_path: str,
     processor_path: str,
@@ -67,8 +67,9 @@ def run_processor(
     venv_path = f"./venvs/{table_name}"
     subprocess.run(["python", "-m", "venv", venv_path])
     requirements = find_requirements_txt(views_path, table_name)
-    subprocess.run([f"{venv_path}/bin/pip", "install", "-r", requirements])
-    subprocess.run(
+    if requirements:
+        subprocess.run([f"{venv_path}/bin/pip", "install", "-r", requirements])
+    run_result = subprocess.run(
         [
             f"{venv_path}/bin/python",
             processor_path,
@@ -77,11 +78,19 @@ def run_processor(
         ]
     )
 
+    if run_result.returncode != 0:
+        error_message = f"""Failed run for {{venv_path}/bin/python}/{processor_path}
+        stderr: 
+        {run_result.stderr}
+        stdout:
+        {run_result.stdout}"""
+        raise ProcessorRunError(table_name, error_message)
+
 
 @log_action("save selected data to CSV")
 def save_selected_to_csv(data: List[Dict], filename: str):
     columns = data[0].keys()
-    with gzip.open(filename, "wt", newline="") as output_file:
+    with open(filename, "w") as output_file:
         dict_writer = csv.DictWriter(
             output_file, columns, delimiter=";", escapechar="\\"
         )
@@ -127,14 +136,14 @@ def copy_to_redshift(
                 f"""
                 COPY {table_name}{temp_postfix} 
                 FROM 's3://{s3_credentials()["bucket"]}/{filename}'
-                --region 'us-east-1'
                 access_key_id '{s3_credentials()["aws_access_key_id"]}'
                 secret_access_key '{s3_credentials()["aws_secret_access_key"]}'
                 delimiter ';'
                 ignoreheader 1
-                emptyasnull blanksasnull csv gzip;
+                emptyasnull blanksasnull csv;
             """
             )
+
             connection.commit()
     except psycopg2.Error:
         raise RedshiftCopyError(table_name)
