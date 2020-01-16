@@ -30,7 +30,6 @@ def run_create_table(table: Table, db_path: str, views_path: str):
 
 async def run_with_timeout(table: Table, db_path: str, views_path: str):
     timeout_length = 5 * get_average_completion_time(db_path, table.name)
-    print(f"timeout is {timeout_length}")
     try:
         async with timeout(timeout_length):
             await create_table(table, db_path, views_path)
