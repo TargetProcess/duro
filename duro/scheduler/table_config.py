@@ -103,12 +103,12 @@ def check_config_fields(tables: List[Table], views_path: str):
 
             continue
 
-        if distkey and distkey not in table.query:
+        if distkey and not (distkey in table.query or "*" in table.query):
             raise ConfigFieldError(
                 f"Distkey {distkey} missing from select query for {table.name}."
             )
 
-        if sortkey and sortkey not in table.query:
+        if sortkey and not (sortkey in table.query or "*" in table.query):
             raise ConfigFieldError(
                 f"Sortkey {sortkey} missing from select query for {table.name}."
             )
