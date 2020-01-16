@@ -87,7 +87,7 @@ def check_config_fields(tables: List[Table], views_path: str):
         if not distkey and not sortkey:
             continue
 
-        processor = find_processor(table.name, views_path)
+        processor = find_processor(views_path, table.name)
 
         if processor:
             ddl_query = load_ddl_query(views_path, table.name)
