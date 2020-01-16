@@ -112,3 +112,10 @@ class ProcessorRunError(CreationError):
     def __init__(self, table, details=None):
         message = f"""*Select query failed for `{table}`* ```{details}```"""
         super().__init__(table, message)
+
+
+class DropOldTableError(CreationError):
+    """Could’t drop old version of the table"""
+
+    def __init__(self, table, details=None):
+        super().__init__(table, f"Couldn’t drop old version of `{table}` even though there are no dependent views: ```{details}````")

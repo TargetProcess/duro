@@ -1,14 +1,14 @@
 from datetime import timedelta
-from typing import Tuple
+from typing import Tuple, List
 
 import arrow
 import psycopg2
 from psycopg2.errorcodes import WRONG_OBJECT_TYPE, UNDEFINED_TABLE, UNDEFINED_COLUMN
 
 from credentials import redshift_credentials
-from utils.errors import TableCreationError, RedshiftConnectionError
+from utils.errors import TableCreationError, RedshiftConnectionError, DropOldTableError
 from utils.logger import log_action
-from utils.table import Table, temp_postfix, history_postfix
+from utils.table import Table, temp_postfix, history_postfix, old_postfix
 
 
 @log_action("create Redshift connection")
@@ -26,7 +26,7 @@ def create_temp_table(table: Table, connection) -> int:
     create_query = table.get_query_with_dist_sort_keys()
     grant_select = table.load_grant_select_statements()
     full_query = f"""
-        DROP TABLE IF EXISTS {table.name}{temp_postfix};
+        drop table if exists {table.name}{temp_postfix};
         {create_query}
         {grant_select};
         """
@@ -45,13 +45,63 @@ def drop_temp_table(table_name: str, connection):
 
 @log_action("drop old table")
 def drop_old_table(table_name: str, connection):
-    drop_table(f"{table_name}_duro_old", connection)
+    drop_table(f"{table_name}{old_postfix}", connection)
 
 
 def drop_table(table_name: str, connection):
     with connection.cursor() as cursor:
-        query_drop = f"DROP TABLE IF EXISTS {table_name};"
+        query_drop = f"drop table if exists {table_name};"
         cursor.execute(query_drop)
+
+
+@log_action("updating dependent views")
+def update_dependent_views(table_name: str, connection):
+    schema, table = table_name.split(".")
+    dependencies = get_dependencies(schema, table, connection)
+    if not dependencies:
+        return
+
+    for view_name, old_definition in dependencies:
+        definition = old_definition.replace(table, f"{table}{temp_postfix}").rstrip(";")
+        update_view(view_name, definition, connection)
+
+
+@log_action("getting dependent views")
+def get_dependencies(schema_name: str, table_name: str, connection) -> List[Tuple[str, str]]:
+    # this is `information_schema.view_table_usage` without filtering by current user
+    query = f"""
+        select distinct nv.nspname + '.' + v.relname as view_name,
+            pg_get_viewdef(v.oid) as view_definition
+        from pg_user, pg_namespace nv, pg_class v, pg_depend dv, 
+            pg_depend dt, pg_class t, pg_namespace nt
+        where nv.oid = v.relnamespace
+            and v.relkind = 'v'
+            and v.oid = dv.refobjid
+            and dv.refclassid = 'pg_class'::regclass::oid
+            and dv.classid = 'pg_rewrite'::regclass::oid
+            and dv.deptype = 'i'
+            and dv.objid = dt.objid
+            and dv.refobjid <> dt.refobjid
+            and dt.classid = 'pg_rewrite'::regclass::oid
+            and dt.refclassid = 'pg_class'::regclass::oid
+            and dt.refobjid = t.oid
+            and t.relnamespace = nt.oid
+            and (t.relkind = 'r' or t.relkind = 'v')
+            and nt.nspname = '{schema_name}'
+            and t.relname = '{table_name}'; 
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        return cursor.fetchall()
+
+
+def update_view(view_name: str, definition: str, connection):
+    with connection.cursor() as cursor:
+        query = f"""
+            create or replace view {view_name} as
+            ({definition})
+        """
+        cursor.execute(query)
 
 
 @log_action("replace old table")
@@ -60,12 +110,14 @@ def replace_old_table(table_name: str, connection):
 
     drop_view(table_name, connection)
 
+    update_dependent_views(table_name, connection)
+
     with connection.cursor() as cursor:
         query_replace = f"""
-            DROP TABLE IF EXISTS {table_name}_duro_old;
-            CREATE TABLE IF NOT EXISTS {table_name} (id int);
-            ALTER TABLE {table_name} RENAME TO {short_table_name}_duro_old;
-            ALTER TABLE {table_name}{temp_postfix} RENAME TO {short_table_name};
+            drop table if exists {table_name}{old_postfix};
+            create table if not exists {table_name} (id int);
+            alter table {table_name} rename to {short_table_name}{old_postfix};
+            alter table {table_name}{temp_postfix} rename to {short_table_name};
             """
         cursor.execute(query_replace)
 
@@ -153,7 +205,7 @@ def remove_old_snapshots(table: Table, connection):
 def drop_view(table_name: str, connection):
     with connection.cursor() as cursor:
         try:
-            cursor.execute(f"DROP VIEW IF EXISTS {table_name};")
+            cursor.execute(f"drop view if exists {table_name};")
         except psycopg2.ProgrammingError as e:
             if e.pgcode == WRONG_OBJECT_TYPE:
                 connection.rollback()

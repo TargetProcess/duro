@@ -13,6 +13,8 @@ from duro.create.redshift import (
     create_snapshots_table,
     insert_new_snapshot_data,
     remove_old_snapshots,
+    get_dependencies,
+    update_view,
 )
 
 
@@ -37,21 +39,22 @@ def test_create_temp_table(table, table_without_config):
     assert pytest.similar(
         redshift_execute.last_query,
         """
-            DROP TABLE IF EXISTS first.cities_duro_temp;
-            CREATE TABLE first.cities_duro_temp
+            drop table if exists first.cities_duro_temp;
+            create table first.cities_duro_temp
             distkey("continent")
-            AS(select * from first.countries);
-            GRANT SELECT ON first.cities_duro_temp TO user_one;
+            as(select * from first.countries);
+            grant select on first.cities_duro_temp to user_one;
         """,
     )
 
     create_temp_table(table_without_config, connection())
+    print(redshift_execute.last_query)
     assert pytest.similar(
         redshift_execute.last_query,
         """
-            DROP TABLE IF EXISTS first.cities_duro_temp;
-            CREATE TABLE first.cities_duro_temp
-            AS(select * from first.countries);;
+            drop table if exists first.cities_duro_temp;
+            create table first.cities_duro_temp
+            as (select * from first.countries);;
         """,
     )
 
@@ -59,28 +62,28 @@ def test_create_temp_table(table, table_without_config):
 def test_drop_table():
     drop_table("first.cities", connection())
     assert pytest.similar(
-        redshift_execute.last_query, "DROP TABLE IF EXISTS first.cities;"
+        redshift_execute.last_query, "drop table if exists first.cities;"
     )
 
 
 def test_drop_old_table():
     drop_old_table("first.cities", connection())
     assert pytest.similar(
-        redshift_execute.last_query, "DROP TABLE IF EXISTS first.cities_duro_old;"
+        redshift_execute.last_query, "drop table if exists first.cities_duro_old;"
     )
 
 
 def test_drop_temp_table():
     drop_temp_table("first.cities", connection())
     assert pytest.similar(
-        redshift_execute.last_query, "DROP TABLE IF EXISTS first.cities_duro_temp;"
+        redshift_execute.last_query, "drop table if exists first.cities_duro_temp;"
     )
 
 
 def test_drop_view():
     drop_view("first.cities", connection())
     assert pytest.similar(
-        redshift_execute.last_query, "DROP VIEW IF EXISTS first.cities;"
+        redshift_execute.last_query, "drop view if exists first.cities;"
     )
 
 
@@ -89,10 +92,10 @@ def test_replace_old_table():
     assert pytest.similar(
         redshift_execute.last_query,
         """
-            DROP TABLE IF EXISTS first.cities_duro_old;
-            CREATE TABLE IF NOT EXISTS first.cities (id int);
-            ALTER TABLE first.cities RENAME TO cities_duro_old;
-            ALTER TABLE first.cities_duro_temp RENAME TO cities;
+            drop table if exists first.cities_duro_old;
+            create table if not exists first.cities (id int);
+            alter table first.cities rename to cities_duro_old;
+            alter table first.cities_duro_temp rename to cities;
         """,
     )
 
@@ -105,7 +108,7 @@ def test_get_snapshot_dates():
            select max(snapshot_timestamp),
                 min(snapshot_timestamp)
            from first.cities_history
-        """
+        """,
     )
 
 
@@ -120,7 +123,7 @@ def test_create_snapshots_table():
                 limit 1
             );
             truncate table first.cities_history;
-        """
+        """,
     )
 
 
@@ -132,7 +135,7 @@ def test_insert_new_snapshot_data():
            insert into first.cities_history
            select *, current_timestamp
            from first.cities
-        """
+        """,
     )
 
 
@@ -146,5 +149,46 @@ def test_remove_old_snapshots(table):
            where datediff('mins', 
                 snapshot_timestamp::timestamp, 
                 current_timestamp::timestamp) > 180
+        """,
+    )
+
+
+def test_get_dependencies():
+    get_dependencies("first", "cities", connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
         """
+            select distinct nv.nspname + '.' + v.relname as view_name,
+                pg_get_viewdef(v.oid) as view_definition
+            from pg_user, pg_namespace nv, pg_class v, pg_depend dv, 
+                pg_depend dt, pg_class t, pg_namespace nt
+            where nv.oid = v.relnamespace
+                and v.relkind = 'v'
+                and v.oid = dv.refobjid
+                and dv.refclassid = 'pg_class'::regclass::oid
+                and dv.classid = 'pg_rewrite'::regclass::oid
+                and dv.deptype = 'i'
+                and dv.objid = dt.objid
+                and dv.refobjid <> dt.refobjid
+                and dt.classid = 'pg_rewrite'::regclass::oid
+                and dt.refclassid = 'pg_class'::regclass::oid
+                and dt.refobjid = t.oid
+                and t.relnamespace = nt.oid
+                and (t.relkind = 'r' or t.relkind = 'v')
+                and nt.nspname = 'first'
+                and t.relname = 'cities';
+        """,
+    )
+
+
+def test_update_view():
+    view = "first.cities_view"
+    definition = "select * from first.cities_duro_temp limit 20"
+    update_view(view, definition, connection())
+    assert pytest.similar(
+        redshift_execute.last_query,
+        """
+            create or replace view first.cities_view as
+            (select * from first.cities_duro_temp limit 20)
+        """,
     )

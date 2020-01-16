@@ -17,7 +17,7 @@ def test_load_dist_sort_keys(db_str):
     assert keys.diststyle == "diststyle even"
     assert keys.sortkey == ""
 
-    empty_table = Table('empty', '', None)
+    empty_table = Table("empty", "", None)
     empty_config = empty_table.load_dist_sort_keys()
     assert empty_config.distkey == ""
     assert empty_config.diststyle == ""
@@ -31,9 +31,9 @@ def test_get_query_with_dist_sort_keys(db_str):
     assert pytest.similar(
         query,
         """
-        CREATE TABLE second.child_duro_temp
+        create table second.child_duro_temp
         distkey("city")  diststyle all
-        AS (select city, country from first.cities);""",
+        as (select city, country from first.cities);""",
     )
 
     parent = load_table_details(db_str, "second.parent")
@@ -41,8 +41,8 @@ def test_get_query_with_dist_sort_keys(db_str):
     assert pytest.similar(
         query,
         """
-        CREATE TABLE second.parent_duro_temp diststyle even
-        AS (select * from second.child limit 10);""",
+        create table second.parent_duro_temp diststyle even
+        as (select * from second.child limit 10);""",
     )
 
 
@@ -53,13 +53,13 @@ def test_load_grant_select_statements(db_str):
 
     cities = load_table_details(db_str, "first.cities")
     grant = cities.load_grant_select_statements()
-    assert pytest.similar(grant,
-                          "GRANT SELECT ON first.cities_duro_temp TO jane, john")
+    assert pytest.similar(grant, "grant select on first.cities_duro_temp to jane, john")
 
     countries = load_table_details(db_str, "first.countries")
     grant = countries.load_grant_select_statements()
-    assert pytest.similar(grant,
-                          "GRANT SELECT ON first.countries_duro_temp TO joan, john")
+    assert pytest.similar(
+        grant, "grant select on first.countries_duro_temp to joan, john"
+    )
 
 
 def test_has_snapshots(db_str):

@@ -4,6 +4,7 @@ from typing import NamedTuple, Dict, Optional
 from utils.utils import convert_interval_to_integer
 
 temp_postfix = "_duro_temp"
+old_postfix = "_duro_old"
 history_postfix = "_history"
 
 
@@ -70,9 +71,9 @@ class Table:
         query = self.query.rstrip(";\n")
         keys = self.load_dist_sort_keys()
         return f"""
-            CREATE TABLE {self.name}{temp_postfix}
+            create table {self.name}{temp_postfix}
             {keys.distkey} {keys.sortkey} {keys.diststyle}
-            AS (
+            as (
                 {query}
             );
         """
@@ -84,8 +85,8 @@ class Table:
         users = self.config.get("grant_select")
         if users is not None:
             return f"""
-                GRANT SELECT ON {self.name}{temp_postfix} 
-                TO {self.config['grant_select']}
+                grant select on {self.name}{temp_postfix} 
+                to {self.config['grant_select']}
             """
 
         return ""
