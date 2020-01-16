@@ -1,5 +1,4 @@
 import csv
-import gzip
 import os
 import subprocess
 from typing import List, Dict, Tuple

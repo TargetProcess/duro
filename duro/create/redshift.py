@@ -6,7 +6,7 @@ import psycopg2
 from psycopg2.errorcodes import WRONG_OBJECT_TYPE, UNDEFINED_TABLE, UNDEFINED_COLUMN
 
 from credentials import redshift_credentials
-from utils.errors import TableCreationError, RedshiftConnectionError, DropOldTableError
+from utils.errors import TableCreationError, RedshiftConnectionError
 from utils.logger import log_action
 from utils.table import Table, temp_postfix, history_postfix, old_postfix
 
