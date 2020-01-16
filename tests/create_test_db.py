@@ -3,42 +3,42 @@ import sqlite3
 ddl = """
 create table commits
 (
-	hash text,
-	processed integer
+    hash text,
+    processed integer
 );
 
 create table tables
 (
-	table_name text,
-	query text,
-	interval integer,
-	config text,
-	last_created integer,
-	mean real,
-	times_run integer,
-	force integer,
-	started integer,
-	deleted integer,
-	waiting integer
+    table_name text,
+    query text,
+    interval integer,
+    config text,
+    last_created integer,
+    mean real,
+    times_run integer,
+    force integer,
+    started integer,
+    deleted integer,
+    waiting integer
 );
 
 create table timestamps
 (
-	"table" text,
-	start int,
-	connect int,
-	"select" int,
-	create_temp int,
-	process int,
-	csv int,
-	s3 int,
-	"insert" int,
-	clean_csv int,
-	tests int,
-	replace_old int,
-	drop_old int,
-	make_snapshot int,
-	finish int
+    "table" text,
+    start int,
+    connect int,
+    "select" int,
+    create_temp int,
+    process int,
+    csv int,
+    s3 int,
+    "insert" int,
+    clean_csv int,
+    tests int,
+    replace_old int,
+    drop_old int,
+    make_snapshot int,
+    finish int
 );
 
 create table version
@@ -90,4 +90,3 @@ null, null, null, null, null, null);
 
 INSERT INTO version (major, minor) VALUES (1, 0);
 """
-
