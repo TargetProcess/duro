@@ -79,7 +79,7 @@ def run_processor(
     )
 
     if run_result.returncode != 0:
-        error_message = f"""Failed run for {{venv_path}/bin/python}/{processor_path}
+        error_message = f"""Failed run for {venv_path}/bin/python/{processor_path}
         stderr: 
         {run_result.stderr}
         stdout:
