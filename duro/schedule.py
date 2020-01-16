@@ -2,12 +2,12 @@ from typing import List
 
 import networkx as nx
 
-from scheduler.table_config import check_config_fields
+from scheduler.table_config import check_config_fields, build_table_configs
 from utils.errors import RootsWithoutIntervalError, SchedulerError, TablesWithoutRequiredFiles
 from notifications.slack import send_slack_notification
 from scheduler.commits import get_all_commits, get_latest_new_commit
 from scheduler.graph import build_graph, save_graph_to_file, check_for_cycles
-from scheduler.sqlite import save_to_db, build_table_configs
+from scheduler.sqlite import save_to_db
 from scheduler.checks import find_tables_with_missing_files
 from utils.file_utils import load_tables_in_path
 from utils.global_config import load_global_config
