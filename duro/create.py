@@ -20,9 +20,19 @@ def create(root_table: str):
 if __name__ == "__main__":
     db_path = load_global_config().db_path
     reset_all_starts(db_path)
+
     while True:
         new_tables = get_tables_to_create(db_path)
-        print(datetime.now(), len(new_tables), "new tables")
+
+        if not new_tables:
+            msg = "No tables in queue"
+        elif len(new_tables) == 1:
+            msg = "One table in queue"
+        else:
+            msg = f"{len(new_tables)} tables in queue"
+        print(f"{datetime.now()}: {msg}")
+
         for t in new_tables:
             create(t[0])
+
         time.sleep(30)
