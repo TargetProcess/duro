@@ -64,7 +64,11 @@ def run_processor(
     processed_filename: str,
 ):
     venv_path = f"./venvs/{table_name}"
-    subprocess.run(["python", "-m", "venv", venv_path])
+    venv_creation_result = subprocess.run(["python3", "-m", "venv", venv_path])
+    if venv_creation_result.returncode != 0:
+        error_message = f"Couldn’t create venv: {venv_creation_result.stderr}"
+        raise ProcessorRunError(table_name, error_message)
+
     requirements = find_requirements_txt(views_path, table_name)
     if requirements:
         subprocess.run([f"{venv_path}/bin/pip", "install", "-r", requirements])
