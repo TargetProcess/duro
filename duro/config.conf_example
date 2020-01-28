@@ -1,0 +1,24 @@
+[main]
+views=../views
+logs=./logs
+db=./duro.db
+use_git = yes
+
+[redshift]
+host =
+port = 5439
+database =
+user =
+password =
+
+[slack]
+url =
+failure_channel =
+success_channel =
+log_channel =
+
+[s3]
+aws_access_key_id =
+aws_secret_access_key =
+bucket =
+folder =
