@@ -106,7 +106,8 @@ def update_table(table: Table, cursor) -> Optional[str]:
             SET query = ?, 
                 interval = ?, 
                 config = ?, 
-                force = 1
+                force = 1,
+                deleted = 0
             WHERE table_name = ?
             """,
             (table.query, table.interval, table.config_json, table.name),
