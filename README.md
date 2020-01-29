@@ -154,6 +154,8 @@ git pull && cd /home/ubuntu/duro/duro && ../venv/bin/python schedule.py
 
 Most of it just checks that we don’t start a copy of ssh_agent every minute, actual job is being done in the last two lines.
 
+Scheduler tracks commits, so most of the time it doesn’t do any rescheduling. 
+
 ## Config and credentials
 We read credentials for Redshift, S3, and Slack from `duro/config.conf`. You can find a template for this file in `duro/config.conf_example`.
 
