@@ -20,7 +20,6 @@ from create.sqlite import (
 from create.timestamps import Timestamps
 from utils.errors import TestsFailedError, QueryTimeoutError
 from utils.file_utils import find_processor
-from utils.logger import setup_logger
 from utils.table import Table
 
 
@@ -40,12 +39,10 @@ async def run_with_timeout(table: Table, db_path: str, views_path: str):
 # pylint: disable=no-member
 # noinspection PyUnresolvedReferences
 async def create_table(table: Table, db_path: str, views_path: str):
-    logger = setup_logger(table.name)
     ts = Timestamps()
     ts.log("start")
 
     log_start(db_path, table.name, ts.start)
-    logger.info(f"Creating {table.name} with interval {table.interval}")
 
     connection = create_connection()
     ts.log("connect")
