@@ -97,7 +97,6 @@ def should_be_created(db_path: str, table: Table) -> bool:
         return True
 
     if table.last_created is None or table.interval is None:
-        logger.info(f"{table.name} is fresh enough, won’t be updated now")
         return True
 
     time_since_last_created = arrow.now() - arrow.get(table.last_created)
