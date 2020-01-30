@@ -167,7 +167,7 @@ Slack section has three channels: `failure_channel`, `success_channel`, and `log
 ## Table and schema configs
 You can specify distkey, sortkey, and diststyle for the table, as well as grant `select` permissions via table configs. Moreover, you can do this using inherited values from schema and global configs.
 
-Let’s say you want to have all your materialized views available in Metabase (which connects to Redshift using `metabase` user). Add `global.conf` to the root of your views folder:
+Let’s say you want to have all your materialized views available in [Metabase](https://www.metabase.com/) (which connects to Redshift using `metabase` user). Add `global.conf` to the root of your views folder:
 
 ```
 grant_select=metabase
@@ -265,6 +265,12 @@ Yes, materialized views were (re)introduced in November 2019, but at the moment 
 
 ### How long are you running this in production?
 We’ve been using duro for more than two years now and currently have 170 views with ~2200 recreations every day.
+
+### What about [dbt](https://www.getdbt.com/)?
+When we just started developing duro, dbt was much less mature, so we couldn’t use it anyway. Although there are quite a lot of similarities, duro has a greater focus on scheduling. We also think that dependencies should be detected by machines.
+
+### Speaking of dependencies, do you do some kind of smart code analysis?
+Nah, we just search for views’ names in other views’ definitions.
 
 ### Wouldn’t it be great to have duro running in a Docker container?
 It would.
