@@ -91,8 +91,8 @@ def skip_none(text: Optional[str]) -> str:
 
 
 def format_job(job) -> Dict:
-    start = arrow.get(job["start"]).format()
-    finish = arrow.get(job["finish"]).format() if job["finish"] else None
+    start = str(arrow.get(job["start"]))
+    finish = str(arrow.get(job["finish"])) if job["finish"] else None
 
     return {"table": job["table"], "start": start, "finish": finish}
 

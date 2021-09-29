@@ -73,21 +73,21 @@ def get_tables():
 @app.route("/<from_date>/<to_date>")
 def show_current(from_date: str = None, to_date: str = None):
     if from_date:
-        floor = arrow.get(from_date).format()
+        floor = arrow.get(from_date)
     else:
-        floor = arrow.utcnow().replace(minutes=-30).format()
+        floor = arrow.utcnow().replace(minutes=-30)
     if to_date:
-        ceiling = arrow.get(to_date).format()
+        ceiling = arrow.get(to_date)
     else:
-        ceiling = arrow.utcnow().format()
+        ceiling = arrow.utcnow()
     return render_template("current_jobs.html", floor=floor, ceiling=ceiling)
 
 
 @app.route("/api/jobs")
 def jobs():
     db = get_db()
-    floor = arrow.get(request.args.get("from")).timestamp
-    ceiling = arrow.get(request.args.get("to")).timestamp
+    floor = arrow.get(request.args.get("from").replace(' ', '+')).timestamp
+    ceiling = arrow.get(request.args.get("to").replace(' ', '+')).timestamp
     jobs_dict = [format_job(job) for job in get_jobs(floor, ceiling, db)]
     return jsonify(jobs_dict)
 
